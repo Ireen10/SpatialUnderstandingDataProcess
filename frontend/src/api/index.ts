@@ -49,8 +49,6 @@ export const searchApi = {
     api.get('/search/datasets', { params: { q: query } }),
 }
 
-export default api
-
 // Auth API
 export const authApi = {
   login: (username: string, password: string) =>
@@ -95,3 +93,28 @@ export const tasksApi = {
   list: (params?: { status?: string; page?: number }) => api.get('/tasks', { params }),
   get: (id: number) => api.get(`/tasks/${id}`),
 }
+
+// Initialization
+export const initApi = {
+  getStatus: () => api.get('/init/status'),
+  initialize: (data: {
+    data_path: string
+    admin_username: string
+    admin_email: string
+    admin_password: string
+    api_base_url?: string
+    api_key?: string
+    api_model?: string
+    http_proxy?: string
+    https_proxy?: string
+    storage_backend?: string
+    s3_endpoint?: string
+    s3_access_key?: string
+    s3_secret_key?: string
+    s3_bucket?: string
+  }) => api.post('/init/initialize', data),
+  getConfig: () => api.get('/init/config'),
+  updateConfig: (data: Record<string, unknown>) => api.put('/init/config', data),
+}
+
+export default api
