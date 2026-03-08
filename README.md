@@ -91,7 +91,46 @@ npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-### Docker 部署
+## 部署方式
+
+### 方式一：一键部署（生产环境）
+
+**Windows**：
+```bash
+deploy.bat
+```
+
+**Linux/Mac**：
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+部署完成后访问：`http://<你的IP>`
+
+---
+
+### 方式二：Docker Compose（推荐生产环境）
+
+```bash
+# 1. 创建环境配置
+cp .env.example .env
+# 编辑 .env 配置 SECRET_KEY 和 OPENROUTER_API_KEY
+
+# 2. 启动服务
+docker compose up -d --build
+
+# 3. 查看日志
+docker compose logs -f
+```
+
+访问地址：
+- 前端：`http://localhost`
+- API文档：`http://localhost:8080/docs`
+
+---
+
+### 方式三：开发模式
 
 ```bash
 cd docker
