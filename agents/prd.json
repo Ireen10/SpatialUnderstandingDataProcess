@@ -162,8 +162,8 @@
         "转换日志记录"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "JSON/JSONL/CSV转换完成，COCO/YOLO标注转换完成"
     },
     {
       "id": "US-010",
@@ -238,8 +238,8 @@
         "导出历史记录"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "ZIP/TAR导出、训练格式导出、筛选导出已完成"
     },
     {
       "id": "US-015",
@@ -312,8 +312,8 @@
         "大文件备份优化策略"
       ],
       "priority": 19,
-      "passes": false,
-      "notes": "T 级数据备份方案待设计"
+      "passes": true,
+      "notes": "完整备份/增量备份、恢复、清理已完成"
     },
     {
       "id": "US-020",
@@ -325,8 +325,8 @@
         "文档说明未来扩展方向"
       ],
       "priority": 20,
-      "passes": false,
-      "notes": "预留功能，暂不实现"
+      "passes": true,
+      "notes": "AI质量分析接口已在ai.py中实现"
     }
   ]
 }
