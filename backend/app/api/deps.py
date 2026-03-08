@@ -12,6 +12,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User, APIKey, UserRole
+from app.services.init import init_service
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
@@ -74,37 +75,21 @@ async def get_admin_user(
     return current_user
 
 
-async def get_user_by_api_key(
-    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
-    db: AsyncSession = Depends(get_db),
-) -> User:
-    """Authenticate user by API key (for external API calls)."""
-    if not x_api_key:
+def check_initialized():
+    """Dependency to check if system is initialized."""
+    if not init_service.is_initialized():
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="API Key required"
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="System not initialized"
         )
-    
-    # Find API key by hash (simplified - use proper hashing in production)
-    result = await db.execute(
-        select(APIKey).options(selectinload(APIKey.user)).where(
-            APIKey.is_active == True
+    return True
+
+
+def allow_if_not_initialized():
+    """Allow access only if system is NOT initialized (for first-time setup)."""
+    if init_service.is_initialized():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="System already initialized"
         )
-    )
-    api_keys = result.scalars().all()
-    
-    # Verify key (simplified)
-    for ak in api_keys:
-        if x_api_key.startswith(ak.key_prefix):
-            # Check quota
-            if ak.quota_used >= ak.quota_limit:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="API quota exceeded"
-                )
-            return ak.user
-    
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid API Key"
-    )
+    return True

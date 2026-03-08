@@ -3,12 +3,14 @@ Main FastAPI application
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.database import init_db, close_db
-from app.api import auth, api_keys, datasets, tasks, ai, files, statistics, search, tools, backups, bugs, monitoring, versions, transform
+from app.services.init import init_service
+from app.api import auth, api_keys, datasets, tasks, ai, files, statistics, search, tools, backups, bugs, monitoring, versions, transform, init
 
 
 @asynccontextmanager
@@ -40,6 +42,43 @@ app.add_middleware(
 )
 
 # Include routers
+# Init routes - always accessible
+app.include_router(init.router, prefix=settings.API_V1_PREFIX)
+
+# Check initialization middleware
+@app.middleware("http")
+async def check_initialization(request: Request, call_next):
+    """Check if system is initialized before allowing access to protected endpoints."""
+    # Public endpoints that don't require initialization
+    public_paths = [
+        "/",
+        "/health",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        f"{settings.API_V1_PREFIX}/init/",
+    ]
+    
+    # Check if path is public
+    is_public = any(request.url.path.startswith(p) for p in public_paths)
+    
+    if is_public:
+        return await call_next(request)
+    
+    # Check initialization status
+    if not init_service.is_initialized():
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": "system_not_initialized",
+                "message": "System requires initialization. Please complete setup via /api/v1/init/initialize",
+                "status_endpoint": f"{settings.API_V1_PREFIX}/init/status",
+            }
+        )
+    
+    return await call_next(request)
+
+# Protected routes - require initialization
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(api_keys.router, prefix=settings.API_V1_PREFIX)
 app.include_router(datasets.router, prefix=settings.API_V1_PREFIX)
