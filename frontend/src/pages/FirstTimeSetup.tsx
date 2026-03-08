@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Form, Input, Button, Card, Typography, message, Alert } from 'antd'
-import { UserOutlined, MailOutlined, LockOutlined, RocketOutlined } from '@ant-design/icons'
+import { Form, Input, Button, Card, Typography, message, Alert, Modal } from 'antd'
+import { UserOutlined, MailOutlined, LockOutlined, RocketOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { authApi, initApi } from '../api'
 
@@ -9,47 +9,83 @@ const { Title, Text } = Typography
 export default function FirstTimeSetup() {
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
   const [form] = Form.useForm()
 
   // 检查是否已初始化
   useState(() => {
-    initApi.getStatus().then(res => {
-      if (res.data.initialized) {
-        // 已初始化，跳转到登录
-        navigate('/login')
-      }
-      setChecking(false)
-    }).catch(() => {
-      setChecking(false)
-    })
+    initApi.getStatus()
+      .then(res => {
+        if (res.data.initialized) {
+          navigate('/login')
+        }
+        setChecking(false)
+      })
+      .catch((err) => {
+        setChecking(false)
+        const detail = err.response?.data?.detail || err.message
+        setError(`无法连接后端服务: ${detail}`)
+      })
   }, [])
 
   const handleFinish = async (values: any) => {
     setLoading(true)
+    setError(null)
+    
     try {
-      // 1. 初始化系统（设置数据路径）
-      await initApi.initialize({
+      // 1. 初始化系统
+      const initData = {
         data_path: values.data_path || './data',
-        admin_username: values.username,
+        admin_username: values.username || 'admin',
         admin_email: values.email,
         admin_password: values.password,
-      })
+      }
+      
+      await initApi.initialize(initData)
 
       // 2. 自动登录
-      const loginRes = await authApi.login(values.username, values.password)
+      const loginRes = await authApi.login(values.username || 'admin', values.password)
       const token = loginRes.data.access_token
 
       // 保存 token
       localStorage.setItem('auth-storage', JSON.stringify({
-        state: { token, user: { username: values.username } },
+        state: { token, user: { username: values.username || 'admin' } },
         version: 0
       }))
 
-      message.success('注册成功！请配置系统。')
+      message.success('注册成功！')
       navigate('/setup/config')
-    } catch (error: any) {
-      message.error(error.response?.data?.detail || '注册失败')
+      
+    } catch (err: any) {
+      console.error('Registration error:', err)
+      
+      let errorMsg = '注册失败，请稍后重试'
+      
+      if (err.response) {
+        const status = err.response.status
+        const detail = err.response.data?.detail
+        
+        if (status === 404) {
+          errorMsg = '服务未就绪，请确保后端服务已启动并更新到最新版本'
+        } else if (status === 400) {
+          errorMsg = detail || '请求参数有误'
+        } else if (status === 500) {
+          errorMsg = '服务器内部错误，请查看后端日志'
+        } else {
+          errorMsg = detail || `请求失败 (${status})`
+        }
+      } else if (err.request) {
+        errorMsg = '无法连接到服务器，请检查网络连接'
+      } else {
+        errorMsg = err.message || '未知错误'
+      }
+      
+      setError(errorMsg)
+      Modal.error({
+        title: '注册失败',
+        content: errorMsg,
+      })
     } finally {
       setLoading(false)
     }
@@ -57,8 +93,15 @@ export default function FirstTimeSetup() {
 
   if (checking) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
         <Text>检查系统状态...</Text>
+        {error && (
+          <Alert
+            type="error"
+            message={error}
+            style={{ maxWidth: 400 }}
+          />
+        )}
       </div>
     )
   }
@@ -76,7 +119,7 @@ export default function FirstTimeSetup() {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <RocketOutlined style={{ fontSize: 48, color: '#1890ff' }} />
           <Title level={2} style={{ marginTop: 16, marginBottom: 0 }}>
-            欢迎使用
+            Welcome
           </Title>
           <Text type="secondary">
             SpatialUnderstandingDataProcess
@@ -84,12 +127,23 @@ export default function FirstTimeSetup() {
         </div>
 
         <Alert
-          message="首次使用"
-          description="请创建管理员账户完成初始化"
+          message="First Time Setup"
+          description="Please create an admin account to get started"
           type="info"
           showIcon
           style={{ marginBottom: 24 }}
         />
+
+        {error && (
+          <Alert
+            type="error"
+            message={error}
+            showIcon
+            style={{ marginBottom: 24 }}
+            closable
+            onClose={() => setError(null)}
+          />
+        )}
 
         <Form
           form={form}
@@ -99,18 +153,18 @@ export default function FirstTimeSetup() {
         >
           <Form.Item
             name="username"
-            label="用户名"
-            rules={[{ required: true, message: '请输入用户名' }]}
+            label="Username"
+            rules={[{ required: true, message: 'Please enter username' }]}
           >
             <Input prefix={<UserOutlined />} placeholder="admin" size="large" />
           </Form.Item>
 
           <Form.Item
             name="email"
-            label="邮箱"
+            label="Email"
             rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '邮箱格式不正确' },
+              { required: true, message: 'Please enter email' },
+              { type: 'email', message: 'Invalid email format' },
             ]}
           >
             <Input prefix={<MailOutlined />} placeholder="admin@example.com" size="large" />
@@ -118,38 +172,38 @@ export default function FirstTimeSetup() {
 
           <Form.Item
             name="password"
-            label="密码"
+            label="Password"
             rules={[
-              { required: true, message: '请输入密码' },
-              { min: 8, message: '密码至少 8 个字符' },
+              { required: true, message: 'Please enter password' },
+              { min: 8, message: 'Password must be at least 8 characters' },
             ]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="至少 8 个字符" size="large" />
+            <Input.Password prefix={<LockOutlined />} placeholder="At least 8 characters" size="large" />
           </Form.Item>
 
           <Form.Item
             name="confirmPassword"
-            label="确认密码"
+            label="Confirm Password"
             dependencies={['password']}
             rules={[
-              { required: true, message: '请确认密码' },
+              { required: true, message: 'Please confirm password' },
               ({ getFieldValue }) => ({
                 validator(_, value) {
                   if (!value || getFieldValue('password') === value) {
                     return Promise.resolve()
                   }
-                  return Promise.reject(new Error('两次密码不一致'))
+                  return Promise.reject(new Error('Passwords do not match'))
                 },
               }),
             ]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="再次输入密码" size="large" />
+            <Input.Password prefix={<LockOutlined />} placeholder="Re-enter password" size="large" />
           </Form.Item>
 
           <Form.Item
             name="data_path"
-            label="数据存储路径"
-            extra="默认为当前目录下的 data 文件夹"
+            label="Data Storage Path"
+            extra="Default: ./data folder"
           >
             <Input placeholder="./data" size="large" />
           </Form.Item>
@@ -161,7 +215,7 @@ export default function FirstTimeSetup() {
             block
             loading={loading}
           >
-            完成注册
+            Complete Registration
           </Button>
         </Form>
       </Card>
