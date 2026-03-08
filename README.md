@@ -43,23 +43,71 @@
 
 ## 快速开始
 
-### 开发环境
+### 1. 安装依赖
 
+**后端**：
 ```bash
-# 后端
 cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -e .
-cp .env.example .env
-# 编辑 .env 配置 OPENROUTER_API_KEY
-python run.py
+pip install -r requirements.txt
+```
 
-# 前端
+**前端**：
+```bash
 cd frontend
 npm install
+```
+
+### 2. 启动服务
+
+**后端**：
+```bash
+cd backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 --reload
+```
+
+**前端**：
+```bash
+cd frontend
 npm run dev
 ```
+
+### 3. 首次使用（初始化向导）
+
+首次启动后端时，系统会进入初始化模式。访问 `http://localhost:8080/docs` 或调用 API 完成初始化：
+
+```bash
+# 检查初始化状态
+curl http://localhost:8080/api/v1/init/status
+
+# 执行初始化
+curl -X POST http://localhost:8080/api/v1/init/initialize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data_path": "/path/to/your/data",
+    "admin_email": "admin@example.com",
+    "admin_password": "your-password",
+    "admin_username": "admin",
+    "api_key": "your-openrouter-api-key",
+    "api_model": "z-ai/glm-5"
+  }'
+```
+
+**必填配置**：
+- `data_path` - 数据存放地址
+- `admin_email` - 管理员邮箱
+- `admin_password` - 管理员密码
+- `admin_username` - 管理员用户名
+
+**选填配置**：
+- `api_base_url` - LLM API 地址（默认 OpenRouter）
+- `api_key` - LLM API Key
+- `api_model` - 模型名称（默认 z-ai/glm-5）
+- `http_proxy` / `https_proxy` - 代理设置
+- `storage_backend` - 存储后端（local/s3/minio）
+
+初始化完成后，即可使用管理员账户登录系统。
 
 ### Docker 部署
 
@@ -113,8 +161,9 @@ docker-compose up -d
 | 018 | 数据搜索功能 | ✅ |
 | 019 | 数据备份机制 | ✅ |
 | 020 | 数据质量评估 | ✅ |
+| 021 | 初始化配置向导 | 🔄 |
 
-**完成度: 20/20 (100%) 🎉**
+**完成度: 20/21 (95%)**
 
 ## 环境变量
 
