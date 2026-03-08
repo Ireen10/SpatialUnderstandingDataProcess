@@ -5,8 +5,13 @@ Initialization and configuration endpoints
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
+from app.core.database import get_db
 from app.core.config import settings
+from app.core.security import get_password_hash
+from app.models.user import User, UserRole
 from app.services.init import init_service
 
 router = APIRouter(prefix="/init", tags=["initialization"])
@@ -70,6 +75,7 @@ async def get_init_status():
 @router.post("/initialize")
 async def initialize_system(
     request: InitRequest,
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Initialize the system for first use.
@@ -95,6 +101,7 @@ async def initialize_system(
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
     
     try:
+        # Save configuration
         result = init_service.initialize(
             data_path=request.data_path,
             admin_username=request.admin_username,
@@ -111,6 +118,30 @@ async def initialize_system(
             s3_secret_key=request.s3_secret_key,
             s3_bucket=request.s3_bucket,
         )
+        
+        # Create admin user in database
+        existing_user = await db.execute(
+            select(User).where(User.username == request.admin_username)
+        )
+        if existing_user.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Username already exists")
+        
+        existing_email = await db.execute(
+            select(User).where(User.email == request.admin_email)
+        )
+        if existing_email.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Email already exists")
+        
+        admin_user = User(
+            username=request.admin_username,
+            email=request.admin_email,
+            hashed_password=get_password_hash(request.admin_password),
+            role=UserRole.ADMIN.value,
+            is_active=True,
+        )
+        db.add(admin_user)
+        await db.commit()
+        
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
