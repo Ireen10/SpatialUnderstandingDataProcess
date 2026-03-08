@@ -5,7 +5,8 @@ import { useAuthStore } from './stores/auth'
 import MainLayout from './layouts/MainLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import InitWizard from './pages/InitWizard'
+import FirstTimeSetup from './pages/FirstTimeSetup'
+import SetupConfig from './pages/SetupConfig'
 import Dashboard from './pages/Dashboard'
 import Datasets from './pages/Datasets'
 import DatasetVisualizer from './pages/DatasetVisualizer'
@@ -24,28 +25,26 @@ function App() {
   const [initialized, setInitialized] = useState<boolean | null>(null)
 
   useEffect(() => {
-    // Check initialization status on app load
-    const checkInit = async () => {
-      try {
-        const res = await initApi.getStatus()
-        setInitialized(res.data.initialized)
-      } catch (error) {
-        // If error, assume not initialized
-        setInitialized(false)
-      } finally {
-        setChecking(false)
-      }
-    }
-    checkInit()
+    checkInitStatus()
   }, [])
 
-  // Loading state
+  const checkInitStatus = async () => {
+    try {
+      const res = await initApi.getStatus()
+      setInitialized(res.data.initialized)
+    } catch (error) {
+      setInitialized(false)
+    } finally {
+      setChecking(false)
+    }
+  }
+
   if (checking) {
     return (
-      <div style={{ 
-        height: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
         gap: 16
@@ -56,17 +55,28 @@ function App() {
     )
   }
 
-  // Not initialized - show init wizard
+  // 未初始化 - 显示首次设置页面
   if (!initialized) {
-    return <InitWizard />
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/*" element={<FirstTimeSetup />} />
+        </Routes>
+      </BrowserRouter>
+    )
   }
 
-  // Initialized - show normal app
+  // 已初始化 - 显示正常应用
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/setup/config" element={
+          <PrivateRoute>
+            <SetupConfig />
+          </PrivateRoute>
+        } />
         <Route
           path="/*"
           element={
