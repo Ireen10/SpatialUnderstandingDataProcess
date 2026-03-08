@@ -1,0 +1,60 @@
+"""
+Main FastAPI application
+"""
+
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.config import settings
+from app.core.database import init_db, close_db
+from app.api import auth, api_keys
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan events."""
+    # Startup
+    await init_db()
+    yield
+    # Shutdown
+    await close_db()
+
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    description="空间理解多模态 VLM 训练数据处理平台",
+    version="0.1.0",
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
+app.include_router(api_keys.router, prefix=settings.API_V1_PREFIX)
+
+
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {
+        "name": settings.PROJECT_NAME,
+        "version": "0.1.0",
+        "docs": "/docs",
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy"}
