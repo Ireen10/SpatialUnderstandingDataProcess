@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Table, Button, Modal, Form, Input, message, Popconfirm, Space, Typography,
   Card, Tag, Progress, Tabs, Upload, Select, InputNumber, Tooltip
 } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, DownloadOutlined, CloudDownloadOutlined,
-  ScanOutlined, FolderOpenOutlined, FileOutlined, ReloadOutlined
+  ScanOutlined, FolderOpenOutlined, FileOutlined, ReloadOutlined, EyeOutlined
 } from '@ant-design/icons'
 import { datasetsApi, tasksApi } from '../api'
 import type { ColumnsType } from 'antd/es/table'
@@ -35,6 +36,7 @@ interface FileItem {
 }
 
 export default function Datasets() {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [datasets, setDatasets] = useState<DatasetItem[]>([])
   const [files, setFiles] = useState<FileItem[]>([])
@@ -167,7 +169,7 @@ export default function Datasets() {
     {
       title: '操作',
       key: 'actions',
-      width: 200,
+      width: 250,
       render: (_, record) => (
         <Space>
           <Tooltip title="扫描文件">
@@ -175,6 +177,9 @@ export default function Datasets() {
           </Tooltip>
           <Tooltip title="下载">
             <Button size="small" icon={<DownloadOutlined />} onClick={() => { setSelectedDataset(record); setDownloadModalVisible(true) }} />
+          </Tooltip>
+          <Tooltip title="可视化">
+            <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/datasets/${record.id}/visualize`)} />
           </Tooltip>
           <Popconfirm title="确定删除?" onConfirm={() => handleDelete(record.id)}>
             <Button size="small" danger icon={<DeleteOutlined />} />

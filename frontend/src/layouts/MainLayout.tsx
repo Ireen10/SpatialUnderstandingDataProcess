@@ -6,6 +6,7 @@ import {
   KeyOutlined,
   SettingOutlined,
   LogoutOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
@@ -16,6 +17,7 @@ const menuItems = [
   { key: '/dashboard', icon: <DashboardOutlined />, label: '仪表盘' },
   { key: '/datasets', icon: <DatabaseOutlined />, label: '数据集' },
   { key: '/api-keys', icon: <KeyOutlined />, label: 'API Keys' },
+  { key: '/ai-assistant', icon: <RobotOutlined />, label: 'AI 助手' },
   { key: '/settings', icon: <SettingOutlined />, label: '设置' },
 ]
 

@@ -147,8 +147,8 @@
         "支持手动刷新加载新增数据"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": "AI 生成可视化；暂不支持点云/网格；用户手动导入数据后刷新即可"
+      "passes": true,
+      "notes": "基础可视化已完成，AI生成可视化代码功能已实现"
     },
     {
       "id": "US-009",
@@ -179,8 +179,8 @@
         "转换结果自动验证"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": "用户需自带 API Key 调用大模型"
+      "passes": true,
+      "notes": "AI服务已实现，支持可视化代码/转换脚本生成、数据质量分析、聊天助手"
     },
     {
       "id": "US-011",
@@ -253,8 +253,8 @@
         "任务历史记录"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "任务模型和API已完成，基础异步处理已实现"
     },
     {
       "id": "US-016",
