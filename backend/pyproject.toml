@@ -9,6 +9,7 @@ dependencies = [
     "python-multipart>=0.0.6",
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
+    "email-validator>=2.1.0",
     "sqlalchemy>=2.0.25",
     "alembic>=1.13.0",
     "psycopg2-binary>=2.9.9",
@@ -25,6 +26,8 @@ dependencies = [
     "loguru>=0.7.2",
     "Pillow>=10.2.0",
     "opencv-python-headless>=4.9.0",
+    "numpy>=1.26.0",
+    "openai>=1.10.0",
 ]
 
 [project.optional-dependencies]

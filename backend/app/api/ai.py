@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.api.deps import get_current_user, get_user_by_api_key
+from app.api.deps import get_current_user, get_admin_user
 from app.models.user import User, APIKey
 from app.models.dataset import Dataset, DataFile, DataType
 from app.services.ai import AIService, get_ai_service
