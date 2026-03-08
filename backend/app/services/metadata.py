@@ -12,14 +12,14 @@ from PIL import Image
 import cv2
 import numpy as np
 
-from app.models.dataset import DataFile, Metadata, DataType
+from app.models.dataset import DataFile, FileMetadata, DataType
 
 
 class MetadataService:
     """Service for extracting metadata from various file types."""
     
     @staticmethod
-    async def extract_metadata(data_file: DataFile, file_path: Path) -> Optional[Metadata]:
+    async def extract_metadata(data_file: DataFile, file_path: Path) -> Optional[FileMetadata]:
         """
         Extract metadata from a data file.
         
@@ -45,9 +45,9 @@ class MetadataService:
         return None
     
     @staticmethod
-    async def _extract_image_metadata(data_file: DataFile, file_path: Path) -> Metadata:
+    async def _extract_image_metadata(data_file: DataFile, file_path: Path) -> FileMetadata:
         """Extract metadata from image file."""
-        metadata = Metadata(data_file_id=data_file.id)
+        metadata = FileMetadata(data_file_id=data_file.id)
         
         try:
             with Image.open(file_path) as img:
@@ -76,9 +76,9 @@ class MetadataService:
         return metadata
     
     @staticmethod
-    async def _extract_video_metadata(data_file: DataFile, file_path: Path) -> Metadata:
+    async def _extract_video_metadata(data_file: DataFile, file_path: Path) -> FileMetadata:
         """Extract metadata from video file."""
-        metadata = Metadata(data_file_id=data_file.id)
+        metadata = FileMetadata(data_file_id=data_file.id)
         
         try:
             cap = cv2.VideoCapture(str(file_path))
@@ -104,9 +104,9 @@ class MetadataService:
         return metadata
     
     @staticmethod
-    async def _extract_text_metadata(data_file: DataFile, file_path: Path) -> Metadata:
+    async def _extract_text_metadata(data_file: DataFile, file_path: Path) -> FileMetadata:
         """Extract metadata from text file."""
-        metadata = Metadata(data_file_id=data_file.id)
+        metadata = FileMetadata(data_file_id=data_file.id)
         
         try:
             content = file_path.read_text(encoding='utf-8', errors='ignore')

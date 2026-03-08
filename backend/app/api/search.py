@@ -5,7 +5,7 @@ Search endpoints for data
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func
 
 from app.core.database import get_db
 from app.api.deps import get_current_user
@@ -43,8 +43,6 @@ async def search_files(
         query = query.where(DataFile.data_type == data_type)
     
     # Count total
-    count_query = select(func.count()).select_from(query.subquery())
-    from sqlalchemy import func
     count_query = (
         select(func.count(DataFile.id))
         .join(Dataset)

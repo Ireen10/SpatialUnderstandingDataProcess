@@ -3,7 +3,7 @@ Database session and connection management
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import sync_sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -64,4 +64,4 @@ def get_sync_engine():
 def get_sync_session():
     """Get sync session factory for Celery tasks."""
     engine = get_sync_engine()
-    return sync_sessionmaker(bind=engine, expire_on_commit=False)
+    return sessionmaker(bind=engine, expire_on_commit=False)

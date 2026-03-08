@@ -62,7 +62,7 @@ async def get_file_preview(
     """Get file preview data (base64 for images, metadata for videos)."""
     result = await db.execute(
         select(DataFile)
-        .options(selectinload(DataFile.dataset), selectinload(DataFile.metadata))
+        .options(selectinload(DataFile.dataset), selectinload(DataFile.file_metadata))
         .where(DataFile.id == file_id)
     )
     data_file = result.scalar_one_or_none()
@@ -76,14 +76,14 @@ async def get_file_preview(
     preview = await visualization_service.get_preview_data(data_file)
     
     # Add metadata if available
-    if data_file.metadata:
+    if data_file.file_metadata:
         preview["metadata"] = {
-            "width": data_file.metadata.width,
-            "height": data_file.metadata.height,
-            "duration": data_file.metadata.duration,
-            "fps": data_file.metadata.fps,
-            "text_length": data_file.metadata.text_length,
-            "word_count": data_file.metadata.word_count,
+            "width": data_file.file_metadata.width,
+            "height": data_file.file_metadata.height,
+            "duration": data_file.file_metadata.duration,
+            "fps": data_file.file_metadata.fps,
+            "text_length": data_file.file_metadata.text_length,
+            "word_count": data_file.file_metadata.word_count,
         }
     
     return preview

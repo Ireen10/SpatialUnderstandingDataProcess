@@ -85,16 +85,16 @@ class DataFile(Base, TimestampMixin):
     
     # Relationships
     dataset: Mapped["Dataset"] = relationship(back_populates="files")
-    metadata: Mapped[Optional["Metadata"]] = relationship(back_populates="data_file", uselist=False, cascade="all, delete-orphan")
+    file_metadata: Mapped[Optional["FileMetadata"]] = relationship(back_populates="data_file", uselist=False, cascade="all, delete-orphan")
     
     def __repr__(self) -> str:
         return f"<DataFile(id={self.id}, filename='{self.filename}', type='{self.data_type}')>"
 
 
-class Metadata(Base, TimestampMixin):
+class FileMetadata(Base, TimestampMixin):
     """Extended metadata for data files."""
     
-    __tablename__ = "metadata"
+    __tablename__ = "file_metadata"
     
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     data_file_id: Mapped[int] = mapped_column(ForeignKey("data_files.id"), unique=True, nullable=False)
@@ -120,7 +120,7 @@ class Metadata(Base, TimestampMixin):
     raw_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     
     # Relationships
-    data_file: Mapped["DataFile"] = relationship(back_populates="metadata")
+    data_file: Mapped["DataFile"] = relationship(back_populates="file_metadata")
     
     def __repr__(self) -> str:
-        return f"<Metadata(id={self.id}, data_file_id={self.data_file_id})>"
+        return f"<FileMetadata(id={self.id}, data_file_id={self.data_file_id})>"

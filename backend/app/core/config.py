@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = Field(
-        default="sqlite+aiosqlite:///./spatial_data.db",
+        default="sqlite+aiosqlite:///./spatial_v2.db",
         description="Database URL"
     )
     

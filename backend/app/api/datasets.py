@@ -19,6 +19,7 @@ from app.models.task import Task, TaskStatus, TaskType
 from app.schemas import (
     DatasetCreate, DatasetUpdate, DatasetResponse,
     DataFileResponse, DataFileWithMetadata, PaginatedResponse, MessageResponse,
+    TaskResponse,
 )
 from app.services.download import download_service
 from app.services.metadata import metadata_service
@@ -203,7 +204,7 @@ async def get_dataset_file(
     
     result = await db.execute(
         select(DataFile)
-        .options(selectinload(DataFile.metadata))
+        .options(selectinload(DataFile.file_metadata))
         .where(DataFile.id == file_id, DataFile.dataset_id == dataset_id)
     )
     file = result.scalar_one_or_none()
@@ -211,19 +212,19 @@ async def get_dataset_file(
         raise HTTPException(status_code=404, detail="File not found")
     
     response = DataFileWithMetadata.model_validate(file)
-    if file.metadata:
+    if file.file_metadata:
         response.metadata = {
-            "width": file.metadata.width,
-            "height": file.metadata.height,
-            "duration": file.metadata.duration,
-            "fps": file.metadata.fps,
-            "text_length": file.metadata.text_length,
-            "word_count": file.metadata.word_count,
+            "width": file.file_metadata.width,
+            "height": file.file_metadata.height,
+            "duration": file.file_metadata.duration,
+            "fps": file.file_metadata.fps,
+            "text_length": file.file_metadata.text_length,
+            "word_count": file.file_metadata.word_count,
         }
     return response
 
 
-@router.post("/{dataset_id}/download/huggingface", response_model=Task)
+@router.post("/{dataset_id}/download/huggingface", response_model=TaskResponse)
 async def download_from_huggingface(
     dataset_id: int,
     repo_id: str = Query(..., description="HuggingFace repo ID"),
@@ -264,7 +265,7 @@ async def download_from_huggingface(
     return task
 
 
-@router.post("/{dataset_id}/download/url", response_model=Task)
+@router.post("/{dataset_id}/download/url", response_model=TaskResponse)
 async def download_from_url(
     dataset_id: int,
     url: str = Query(..., description="Download URL"),

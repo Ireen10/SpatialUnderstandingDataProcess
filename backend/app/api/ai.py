@@ -149,7 +149,7 @@ async def analyze_dataset_quality(
     # Get files with metadata
     result = await db.execute(
         select(DataFile)
-        .options(selectinload(DataFile.metadata))
+        .options(selectinload(DataFile.file_metadata))
         .where(DataFile.dataset_id == dataset_id)
         .limit(100)
     )
@@ -176,11 +176,11 @@ async def analyze_dataset_quality(
                 "type": f.data_type,
                 "status": f.status,
             }
-            if f.metadata:
+            if f.file_metadata:
                 file_info["metadata"] = {
-                    "width": f.metadata.width,
-                    "height": f.metadata.height,
-                    "duration": f.metadata.duration,
+                    "width": f.file_metadata.width,
+                    "height": f.file_metadata.height,
+                    "duration": f.file_metadata.duration,
                 }
             data_info["sample_files"].append(file_info)
     
