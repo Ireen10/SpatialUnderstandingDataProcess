@@ -4,18 +4,29 @@
 
 ## 功能特性
 
+### 核心功能
 - 🔐 **多用户系统** - 用户注册/登录、JWT认证、权限隔离
 - 🔑 **API Key管理** - 配额控制、自定义LLM配置
 - 📥 **数据下载** - HuggingFace Hub、自定义URL下载
 - 📊 **数据管理** - 文件索引、元数据提取、存储管理
+
+### 数据处理
 - 👁️ **数据可视化** - 图像/视频预览、配对数据展示、HTML画廊
 - 🤖 **AI辅助** - GLM-5集成、可视化代码生成、格式转换脚本
-- 📈 **统计分析** - 数据概览、时间线、类型分布
-- 🔍 **数据搜索** - 文件名搜索、模糊匹配
 - 🔄 **格式转换** - JSON/JSONL/CSV、COCO/YOLO标注格式
 - 📦 **数据导出** - ZIP/TAR打包、训练格式导出
+
+### 数据治理
+- 🔍 **数据搜索** - 文件名搜索、模糊匹配
+- 📈 **统计分析** - 数据概览、时间线、类型分布
+- 🐛 **Bug标记** - 问题报告、AI修复建议、批量处理
 - 💾 **数据备份** - 完整/增量备份、恢复功能
+- 📋 **版本管理** - 快照、回滚、差异对比
+- 📝 **审计日志** - 操作追踪、系统监控
+
+### 部署运维
 - 🐳 **Docker部署** - 一键部署、Celery任务队列
+- 🩺 **健康监控** - 系统状态、性能指标
 
 ## 技术栈
 
@@ -28,6 +39,7 @@
 | 任务队列 | Celery |
 | AI | OpenRouter GLM-5 |
 | 部署 | Docker / Docker Compose |
+| 版本控制 | Git / DVC (可选) |
 
 ## 快速开始
 
@@ -58,25 +70,24 @@ docker-compose up -d
 
 访问 http://localhost 查看前端，http://localhost:8000/docs 查看API文档。
 
-## API 端点
+## API 端点汇总
 
-| 模块 | 端点 | 说明 |
-|------|------|------|
-| 认证 | POST /api/v1/auth/register | 用户注册 |
-| 认证 | POST /api/v1/auth/login | 用户登录 |
-| 认证 | GET /api/v1/auth/me | 获取当前用户 |
-| API Key | POST /api/v1/api-keys | 创建API Key |
-| API Key | GET /api/v1/api-keys | 列出API Keys |
-| 数据集 | POST /api/v1/datasets | 创建数据集 |
-| 数据集 | POST /api/v1/datasets/{id}/download/huggingface | 从HF下载 |
-| 数据集 | POST /api/v1/datasets/{id}/scan | 扫描文件 |
-| 转换 | POST /api/v1/tools/datasets/{id}/convert | 格式转换 |
-| 导出 | POST /api/v1/tools/datasets/{id}/export | 导出数据集 |
-| 备份 | POST /api/v1/backups/datasets/{id} | 创建备份 |
-| AI | POST /api/v1/ai/generate-visualization | 生成可视化 |
-| AI | POST /api/v1/ai/generate-conversion-script | 生成转换脚本 |
-| 统计 | GET /api/v1/statistics/overview | 统计概览 |
-| 搜索 | GET /api/v1/search/files | 搜索文件 |
+| 模块 | 端点数 | 说明 |
+|------|--------|------|
+| 认证 | 3 | 注册、登录、用户信息 |
+| API Key | 6 | 创建、管理、配额控制 |
+| 数据集 | 8 | CRUD、下载、扫描 |
+| 任务 | 4 | 列表、详情、取消、重试 |
+| AI | 5 | 可视化、转换脚本、质量分析、聊天 |
+| 统计 | 3 | 概览、时间线、数据集统计 |
+| 搜索 | 2 | 文件搜索、数据集搜索 |
+| 转换/导出 | 5 | 格式转换、导出、训练格式 |
+| 备份 | 6 | 创建、恢复、删除、清理 |
+| Bug | 7 | 报告、状态、AI分析、扫描 |
+| 版本 | 5 | 快照、恢复、对比、删除 |
+| 监控 | 6 | 审计日志、指标、健康状态 |
+
+**总计：60+ API 端点**
 
 ## 开发进度
 
@@ -92,18 +103,18 @@ docker-compose up -d
 | 008 | 数据可视化模块 | ✅ |
 | 009 | 数据格式转换系统 | ✅ |
 | 010 | AI辅助功能 | ✅ |
-| 011 | 数据Bug标记与AI修复 | 📋 |
-| 012 | 数据版本管理 | 📋 |
+| 011 | 数据Bug标记与AI修复 | ✅ |
+| 012 | 数据版本管理 | ✅ |
 | 013 | 数据统计功能 | ✅ |
 | 014 | 数据导出功能 | ✅ |
 | 015 | 任务队列与异步处理 | ✅ |
-| 016 | 日志与监控系统 | 📋 |
+| 016 | 日志与监控系统 | ✅ |
 | 017 | 部署与服务管理 | ✅ |
 | 018 | 数据搜索功能 | ✅ |
 | 019 | 数据备份机制 | ✅ |
 | 020 | 数据质量评估 | ✅ |
 
-**完成度: 17/20 (85%)**
+**完成度: 20/20 (100%) 🎉**
 
 ## 环境变量
 
@@ -116,6 +127,29 @@ docker-compose up -d
 | OPENROUTER_API_KEY | OpenRouter API Key | - |
 | OPENROUTER_MODEL | 模型名称 | z-ai/glm-5 |
 | HTTP_PROXY | HTTP代理 | - |
+
+## 项目结构
+
+```
+├── backend/
+│   ├── app/
+│   │   ├── api/          # API路由 (12个模块)
+│   │   ├── core/         # 核心配置
+│   │   ├── models/       # 数据库模型
+│   │   ├── schemas/      # Pydantic模式
+│   │   ├── services/     # 业务逻辑 (8个服务)
+│   │   └── worker.py     # Celery Worker
+│   └── pyproject.toml
+├── frontend/
+│   ├── src/
+│   │   ├── api/          # API客户端
+│   │   ├── layouts/      # 布局组件
+│   │   ├── pages/        # 页面组件
+│   │   └── stores/       # 状态管理
+│   └── package.json
+├── docker/               # Docker配置
+└── data/                 # 数据存储
+```
 
 ## License
 
