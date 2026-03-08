@@ -80,7 +80,7 @@ if not exist node_modules (
     )
 )
 
-echo Starting frontend on port 5173...
+echo   Starting frontend on port 3000...
 start "SpatialDataProcess-Frontend" npm run dev -- --host 0.0.0.0
 
 timeout /t 5 /nobreak >nul
@@ -90,7 +90,7 @@ echo ==========================================
 echo   Services Started!
 echo ==========================================
 echo.
-echo   Frontend: http://%LOCAL_IP%:5173
+echo   Frontend: http://%LOCAL_IP%:3000
 echo   Backend:  http://%LOCAL_IP%:8080
 echo   API Docs: http://%LOCAL_IP%:8080/docs
 echo.
