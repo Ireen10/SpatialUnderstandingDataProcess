@@ -7,7 +7,7 @@ import {
   CodeOutlined, RobotOutlined, ThunderboltOutlined, FileTextOutlined,
   CopyOutlined, PlayCircleOutlined
 } from '@ant-design/icons'
-import { api } from '../api'
+import api from '../api'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input

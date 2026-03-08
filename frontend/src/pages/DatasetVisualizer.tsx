@@ -8,7 +8,7 @@ import {
   ArrowLeftOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined,
   PictureOutlined, VideoCameraOutlined, DatabaseOutlined
 } from '@ant-design/icons'
-import { datasetsApi, api } from '../api'
+import api, { datasetsApi } from '../api'
 
 const { Title, Text } = Typography
 

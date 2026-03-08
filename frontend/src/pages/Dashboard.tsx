@@ -7,7 +7,7 @@ import {
   PictureOutlined, VideoCameraOutlined, FileTextOutlined,
   ClockCircleOutlined, ThunderboltOutlined
 } from '@ant-design/icons'
-import { api } from '../api'
+import api from '../api'
 
 const { Title, Text } = Typography
 
