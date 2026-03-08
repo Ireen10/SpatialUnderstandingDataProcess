@@ -223,8 +223,8 @@
         "可视化统计图表"
       ],
       "priority": 13,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "统计API和仪表盘已完成"
     },
     {
       "id": "US-014",
@@ -282,8 +282,8 @@
         "配置备份"
       ],
       "priority": 17,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Docker配置已完成，Celery Worker已配置"
     },
     {
       "id": "US-018",
@@ -296,8 +296,8 @@
         "支持按用户隔离搜索结果"
       ],
       "priority": 18,
-      "passes": false,
-      "notes": "初期仅支持按名称搜索"
+      "passes": true,
+      "notes": "文件和数据库搜索API已完成"
     },
     {
       "id": "US-019",

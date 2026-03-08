@@ -34,6 +34,21 @@ api.interceptors.response.use(
   }
 )
 
+// Statistics
+export const statisticsApi = {
+  getOverview: () => api.get('/statistics/overview'),
+  getTimeline: (days: number = 30) => api.get('/statistics/timeline', { params: { days } }),
+  getDatasetStats: (datasetId: number) => api.get(`/statistics/dataset/${datasetId}`),
+}
+
+// Search
+export const searchApi = {
+  searchFiles: (query: string, dataType?: string, page?: number) =>
+    api.get('/search/files', { params: { q: query, data_type: dataType, page } }),
+  searchDatasets: (query: string) =>
+    api.get('/search/datasets', { params: { q: query } }),
+}
+
 export default api
 
 // Auth API
