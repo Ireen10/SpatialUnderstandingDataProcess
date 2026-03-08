@@ -1,100 +1,98 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 >nul 2>&1
 setlocal enabledelayedexpansion
 
 echo ==========================================
 echo   SpatialUnderstandingDataProcess
-echo   生产环境部署
+echo   Production Deployment
 echo ==========================================
 echo.
 
-REM 获取脚本所在目录
+REM Get script directory
 cd /d "%~dp0"
 set SCRIPT_DIR=%cd%
 
-REM 检查 Docker
-echo 检查 Docker...
+REM Check Docker
+echo Checking Docker...
 where docker >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [错误] Docker 未安装
-    echo 请安装 Docker Desktop: https://www.docker.com/products/docker-desktop
+if errorlevel 1 (
+    echo [ERROR] Docker not found
+    echo Please install Docker Desktop from https://www.docker.com/products/docker-desktop
     pause
     exit /b 1
 )
-echo [OK] Docker 已安装
+echo [OK] Docker installed
 
-REM 检查 Docker Compose
+REM Check Docker Compose
 docker compose version >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [警告] Docker Compose 不可用，请确保 Docker Desktop 版本支持
+if errorlevel 1 (
+    echo [WARN] Docker Compose not available
 )
 
-REM 创建必要目录
+REM Create directories
 if not exist logs mkdir logs
 if not exist data mkdir data
 
-REM 创建环境文件
+REM Create .env file
 if not exist .env (
     echo.
-    echo 创建环境配置...
+    echo Creating environment configuration...
     
-    REM 生成随机密钥（简化版）
-    set SECRET_KEY=%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%
+    REM Generate random secret key
+    set SECRET_KEY=%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%
     
     (
-        echo # 生产环境配置
+        echo # Production Configuration
         echo SECRET_KEY=!SECRET_KEY!
         echo DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/sudp
         echo REDIS_URL=redis://redis:6379/0
         echo DATA_STORAGE_PATH=/data
         echo.
-        echo # API 配置（可选）
+        echo # API Configuration (optional)
         echo OPENROUTER_API_KEY=
         echo OPENROUTER_MODEL=z-ai/glm-5
         echo.
-        echo # 服务端口
+        echo # Ports
         echo BACKEND_PORT=8080
         echo FRONTEND_PORT=80
     ) > .env
     
-    echo [OK] 已创建 .env 文件
+    echo [OK] Created .env file
 ) else (
-    echo [OK] .env 文件已存在
+    echo [OK] .env file exists
 )
 
-REM 构建前端
+REM Build frontend
 echo.
-echo 构建前端...
+echo Building frontend...
 cd /d "%SCRIPT_DIR%\frontend"
 
-if exist node_modules (
-    echo [OK] 依赖已安装
-) else (
+if not exist node_modules (
     if exist package.json (
-        echo 安装依赖...
+        echo Installing dependencies...
         call npm install --silent
     )
 )
 
 if exist package.json (
-    echo 构建生产版本...
+    echo Building production version...
     call npm run build
-    echo [OK] 前端构建完成
+    echo [OK] Frontend built
 )
 
 cd /d "%SCRIPT_DIR%"
 
-REM 启动服务
+REM Start services
 echo.
-echo 启动 Docker 服务...
+echo Starting Docker services...
 docker compose up -d --build
 
-REM 等待服务就绪
+REM Wait for services
 echo.
-echo 等待服务启动...
+echo Waiting for services to start...
 timeout /t 10 /nobreak >nul
 
-REM 获取本机IP
+REM Get local IP
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
     set LOCAL_IP=%%a
     goto :got_ip
@@ -103,23 +101,23 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
 set LOCAL_IP=%LOCAL_IP: =%
 if "%LOCAL_IP%"=="" set LOCAL_IP=127.0.0.1
 
-REM 显示信息
+REM Show info
 echo.
 echo ==========================================
-echo   部署完成！
+echo   Deployment Complete!
 echo ==========================================
 echo.
-echo 访问地址:
-echo   应用:    http://%LOCAL_IP%
-echo   API文档: http://%LOCAL_IP%:8080/docs
+echo Access URLs:
+echo   App:     http://%LOCAL_IP%
+echo   API Docs: http://%LOCAL_IP%:8080/docs
 echo.
-echo 默认配置:
-echo   数据存储: .\data
-echo   日志目录: .\logs
+echo Configuration:
+echo   Data: .\data
+echo   Logs: .\logs
 echo.
-echo 管理命令:
-echo   停止服务: deploy.bat stop
-echo   查看日志: docker compose logs -f
-echo   重启服务: docker compose restart
+echo Commands:
+echo   Stop:   deploy.bat stop
+echo   Logs:   docker compose logs -f
+echo   Restart: docker compose restart
 echo.
 pause

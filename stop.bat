@@ -1,12 +1,11 @@
 @echo off
-chcp 65001 >nul
-echo 停止服务...
+echo Stopping services...
 
-REM 停止后端
-taskkill /f /im "python.exe" /fi "WINDOWTITLE eq Backend*" >nul 2>&1
+REM Kill Python processes for backend
+taskkill /f /fi "WINDOWTITLE eq Backend*" >nul 2>&1
 
-REM 停止前端
-taskkill /f /im "node.exe" /fi "WINDOWTITLE eq Frontend*" >nul 2>&1
+REM Kill Node processes for frontend
+taskkill /f /fi "WINDOWTITLE eq Frontend*" >nul 2>&1
 
-echo 所有服务已停止
+echo All services stopped.
 pause

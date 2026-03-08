@@ -1,5 +1,5 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 >nul 2>&1
 setlocal enabledelayedexpansion
 
 echo ==========================================
@@ -7,15 +7,15 @@ echo   SpatialUnderstandingDataProcess
 echo ==========================================
 echo.
 
-REM 获取脚本所在目录
+REM Get script directory
 cd /d "%~dp0"
 set SCRIPT_DIR=%cd%
 
-REM 创建必要目录
+REM Create directories
 if not exist logs mkdir logs
 if not exist data mkdir data
 
-REM 获取本机IP
+REM Get local IP
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
     set LOCAL_IP=%%a
     goto :got_ip
@@ -24,100 +24,99 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
 set LOCAL_IP=%LOCAL_IP: =%
 if "%LOCAL_IP%"=="" set LOCAL_IP=127.0.0.1
 
-REM 检查 Python
-echo 检查 Python...
+REM Check Python
+echo Checking Python...
 where python >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [错误] 未找到 Python，请先安装 Python 3.10+
-    echo 下载地址: https://www.python.org/downloads/
+if errorlevel 1 (
+    echo [ERROR] Python not found
+    echo Please install Python 3.10+ from https://www.python.org/downloads/
     pause
     exit /b 1
 )
 for /f "tokens=*" %%i in ('python --version') do echo [OK] %%i
 
-REM 检查 Node.js
+REM Check Node.js
 echo.
-echo 检查 Node.js...
+echo Checking Node.js...
 where node >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [警告] Node.js 未安装，前端将无法启动
-    echo 下载地址: https://nodejs.org/
+if errorlevel 1 (
+    echo [WARN] Node.js not found, frontend will not start
+    echo Download from https://nodejs.org/
 ) else (
     for /f "tokens=*" %%i in ('node -v') do echo [OK] Node.js %%i
 )
 
-REM 后端设置
+REM Backend setup
 echo.
 echo ==========================================
-echo   后端设置
+echo   Backend Setup
 echo ==========================================
 
 cd /d "%SCRIPT_DIR%\backend"
 
-REM 创建虚拟环境
+REM Create virtual environment
 if not exist venv (
-    echo 创建虚拟环境...
+    echo Creating virtual environment...
     python -m venv venv
 )
 
-REM 激活虚拟环境
+REM Activate virtual environment
 call venv\Scripts\activate.bat
 
-REM 安装依赖
+REM Install dependencies
 if exist requirements.txt (
-    echo 安装 Python 依赖...
+    echo Installing Python dependencies...
     pip install -r requirements.txt -q
 )
 
-REM 启动后端
+REM Start backend
 echo.
-echo 启动后端服务...
+echo Starting backend service...
 set DATABASE_URL=sqlite+aiosqlite:///./data/app.db
 set DATA_STORAGE_PATH=.\data
 
-start "Backend" /min cmd /c "venv\Scripts\activate && python -m uvicorn app.main:app --host 0.0.0.0 --port 8080"
+start "Backend" /min cmd /c "call venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8080"
 
 timeout /t 3 /nobreak >nul
 
-REM 前端设置
+REM Frontend setup
 echo.
 echo ==========================================
-echo   前端设置
+echo   Frontend Setup
 echo ==========================================
 
 cd /d "%SCRIPT_DIR%\frontend"
 
 if exist node_modules (
-    echo [OK] 依赖已安装
+    echo [OK] Dependencies installed
 ) else (
     if exist package.json (
-        echo 安装 npm 依赖...
+        echo Installing npm dependencies...
         call npm install --silent
     )
 )
 
-REM 启动前端
+REM Start frontend
 echo.
-echo 启动前端服务...
+echo Starting frontend service...
 start "Frontend" /min cmd /c "npm run dev -- --host 0.0.0.0"
 
 timeout /t 5 /nobreak >nul
 
-REM 显示信息
+REM Show info
 echo.
 echo ==========================================
-echo   服务启动完成！
+echo   Services Started!
 echo ==========================================
 echo.
-echo 访问地址:
-echo   前端:   http://%LOCAL_IP%:5173
-echo   后端:   http://%LOCAL_IP%:8080
-echo   API文档: http://%LOCAL_IP%:8080/docs
+echo Access URLs:
+echo   Frontend: http://%LOCAL_IP%:5173
+echo   Backend:  http://%LOCAL_IP%:8080
+echo   API Docs: http://%LOCAL_IP%:8080/docs
 echo.
-echo 首次使用请访问前端地址进行初始化配置
+echo First time? Visit the frontend URL to complete setup.
 echo.
-echo 停止服务: 运行 stop.bat
-echo 查看日志: logs\backend.log
+echo To stop: run stop.bat
 echo.
-echo 按任意键退出此窗口（服务将继续运行）
+echo Press any key to close this window (services will keep running)
 pause >nul
