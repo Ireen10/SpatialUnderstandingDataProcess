@@ -3,13 +3,11 @@ import { Card, Typography, Form, Input, Button, Select, Divider, message, Space,
 import { SettingOutlined, ApiOutlined, CloudServerOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { initApi } from '../api'
 
-const { Title, Text, Paragraph } = Typography
+const { Title, Text } = Typography
 const { Option } = Select
 
 export default function SetupConfig() {
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [config, setConfig] = useState<any>({})
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -17,15 +15,11 @@ export default function SetupConfig() {
   }, [])
 
   const loadConfig = async () => {
-    setLoading(true)
     try {
       const res = await initApi.getConfig()
-      setConfig(res.data.config || {})
       form.setFieldsValue(res.data.config || {})
     } catch (error) {
       console.error('Failed to load config:', error)
-    } finally {
-      setLoading(false)
     }
   }
 

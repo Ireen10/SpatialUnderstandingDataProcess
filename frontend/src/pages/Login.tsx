@@ -14,7 +14,9 @@ export default function Login() {
     setLoading(true)
     try {
       const { data } = await authApi.login(values.username, values.password)
-      // Get user info
+      // Store token first so getMe can use it
+      setAuth(data.access_token, null as any)
+      // Now get user info (token is in localStorage, interceptor will use it)
       const { data: user } = await authApi.getMe()
       setAuth(data.access_token, user)
       message.success('登录成功')

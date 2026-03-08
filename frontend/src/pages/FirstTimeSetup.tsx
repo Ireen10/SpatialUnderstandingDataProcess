@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Form, Input, Button, Card, Typography, message, Alert, Modal } from 'antd'
-import { UserOutlined, MailOutlined, LockOutlined, RocketOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import { UserOutlined, MailOutlined, LockOutlined, RocketOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { authApi, initApi } from '../api'
 
@@ -14,7 +14,7 @@ export default function FirstTimeSetup() {
   const [form] = Form.useForm()
 
   // 检查是否已初始化
-  useState(() => {
+  useEffect(() => {
     initApi.getStatus()
       .then(res => {
         if (res.data.initialized) {

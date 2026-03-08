@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Card, Typography, Space, Button, Spin, Empty, Row, Col, Tag, Image,
-  Tabs, Statistic, Progress, message
+  Tabs, Statistic, message
 } from 'antd'
 import {
   ArrowLeftOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined,

@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Table, Button, Modal, Form, Input, message, Popconfirm, Space, Typography,
-  Card, Tag, Progress, Tabs, Upload, Select, InputNumber, Tooltip
+  Card, Tag, Select, Tooltip
 } from 'antd'
 import {
-  PlusOutlined, DeleteOutlined, DownloadOutlined, CloudDownloadOutlined,
-  ScanOutlined, FolderOpenOutlined, FileOutlined, ReloadOutlined, EyeOutlined
+  PlusOutlined, DeleteOutlined, DownloadOutlined,
+  ScanOutlined, EyeOutlined
 } from '@ant-design/icons'
-import { datasetsApi, tasksApi } from '../api'
+import { datasetsApi } from '../api'
 import type { ColumnsType } from 'antd/es/table'
 
-const { Title, Text } = Typography
+const { Title } = Typography
 
 interface DatasetItem {
   id: number
