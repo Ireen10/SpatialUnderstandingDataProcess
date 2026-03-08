@@ -60,11 +60,19 @@ export const datasetsApi = {
   list: (params?: { page?: number; page_size?: number }) =>
     api.get('/datasets', { params }),
   get: (id: number) => api.get(`/datasets/${id}`),
-  create: (data: { name: string; description?: string }) => api.post('/datasets', data),
+  create: (data: { name: string; description?: string; storage_path?: string }) => api.post('/datasets', data),
   update: (id: number, data: { name?: string; description?: string }) =>
     api.patch(`/datasets/${id}`, data),
   delete: (id: number) => api.delete(`/datasets/${id}`),
   scan: (id: number) => api.post(`/datasets/${id}/scan`),
+  listFiles: (datasetId: number, params?: { page?: number; page_size?: number }) =>
+    api.get(`/datasets/${datasetId}/files`, { params }),
+  downloadFromHuggingface: (datasetId: number, repoId: string, allowPatterns?: string) =>
+    api.post(`/datasets/${datasetId}/download/huggingface`, null, {
+      params: { repo_id: repoId, allow_patterns: allowPatterns }
+    }),
+  downloadFromUrl: (datasetId: number, url: string) =>
+    api.post(`/datasets/${datasetId}/download/url`, null, { params: { url } }),
 }
 
 // Tasks
