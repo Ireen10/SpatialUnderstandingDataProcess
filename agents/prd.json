@@ -346,6 +346,23 @@
       "priority": 21,
       "passes": true,
       "notes": "开箱即用体验的核心功能，前端向导已完成"
+    },
+    {
+      "id": "US-022",
+      "title": "一键部署与生产环境支持",
+      "description": "提供开箱即用的部署方案，用户下载后可直接使用",
+      "acceptanceCriteria": [
+        "Windows一键部署脚本 deploy.bat",
+        "Linux/Mac一键部署脚本 deploy.sh",
+        "Docker Compose生产环境编排",
+        "Nginx反向代理统一入口",
+        "自动检测局域网IP显示访问地址",
+        "环境配置模板 .env.example",
+        "完整的README部署说明"
+      ],
+      "priority": 22,
+      "passes": true,
+      "notes": "支持开发模式和生产模式部署"
     }
   ]
 }

@@ -372,41 +372,60 @@
 
 ---
 
+### US-022: 一键部署与生产环境支持
+
+**描述**：提供开箱即用的部署方案，用户下载后可直接使用
+
+**验收标准**：
+- [x] Windows一键部署脚本 deploy.bat
+- [x] Linux/Mac一键部署脚本 deploy.sh
+- [x] Docker Compose生产环境编排
+- [x] Nginx反向代理统一入口
+- [x] 自动检测局域网IP显示访问地址
+- [x] 环境配置模板 .env.example
+- [x] 完整的README部署说明
+
+**状态**：✅ 完成
+
+---
+
 ## 项目进度
 
 | 指标 | 数值 |
 |------|------|
-| 总用户故事 | 21 |
-| 已完成 | 21 |
+| 总用户故事 | 22 |
+| 已完成 | 22 |
 | 进行中 | 0 |
 | 完成率 | 100% 🎉 |
 
 ---
 
-## 快速开始
+## 部署方式
+
+### 一键部署（推荐）
 
 ```bash
-# 克隆项目
-git clone https://github.com/Ireen10/SpatialUnderstandingDataProcess.git
-cd SpatialUnderstandingDataProcess
+# Windows
+deploy.bat
 
-# 启动后端
-cd backend
-pip install -r requirements.txt
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8080
-
-# 启动前端
-cd frontend
-npm install
-npm run dev
+# Linux/Mac
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-首次访问将进入初始化向导。
+### Docker Compose
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+访问地址：`http://<你的IP>`
 
 ---
 
 ## API 文档
 
 启动后端后访问：
-- Swagger UI: http://127.0.0.1:8080/docs
-- ReDoc: http://127.0.0.1:8080/redoc
+- Swagger UI: http://localhost:8080/docs
+- ReDoc: http://localhost:8080/redoc
