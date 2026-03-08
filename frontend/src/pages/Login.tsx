@@ -20,7 +20,8 @@ export default function Login() {
       const { data: user } = await authApi.getMe()
       setAuth(data.access_token, user)
       message.success('登录成功')
-      navigate('/dashboard')
+      // Use replace to prevent going back to login
+      navigate('/dashboard', { replace: true })
     } catch (error: any) {
       message.error(error.response?.data?.detail || '登录失败')
     } finally {

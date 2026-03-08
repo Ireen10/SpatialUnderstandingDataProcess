@@ -44,18 +44,20 @@ export default function FirstTimeSetup() {
       
       await initApi.initialize(initData)
 
-      // 2. 自动登录
+      // 保存 token 并获取用户信息
       const loginRes = await authApi.login(values.username || 'admin', values.password)
       const token = loginRes.data.access_token
 
-      // 保存 token
+      // 保存 token 到 localStorage
       localStorage.setItem('auth-storage', JSON.stringify({
         state: { token, user: { username: values.username || 'admin' } },
         version: 0
       }))
 
-      message.success('注册成功！')
-      navigate('/setup/config')
+      message.success('注册成功！正在跳转...')
+      
+      // 直接跳转到 dashboard（使用 replace 避免回退到注册页）
+      window.location.href = '/dashboard'
       
     } catch (err: any) {
       console.error('Registration error:', err)

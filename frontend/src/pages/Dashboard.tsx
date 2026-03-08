@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  Card, Row, Col, Statistic, Typography, Spin, Progress, Tag, Space, Empty
+  Card, Row, Col, Statistic, Typography, Spin, Progress, Tag, Space, Empty, Button
 } from 'antd'
 import {
   DatabaseOutlined, FileOutlined, CloudServerOutlined,
@@ -241,6 +241,60 @@ export default function Dashboard() {
                 </div>
               )
             })}
+          </div>
+        </Card>
+      )}
+
+      {/* Quick Start Guide for new users */}
+      {stats.total_datasets === 0 && (
+        <Card 
+          title="🚀 快速入门" 
+          style={{ marginTop: 24, marginBottom: 24, border: '2px solid #1890ff' }}
+        >
+          <div style={{ padding: '8px 0' }}>
+            <Title level={5}>欢迎使用 SpatialUnderstandingDataProcess！</Title>
+            <Text type="secondary">按照以下步骤开始处理您的数据：</Text>
+            
+            <div style={{ marginTop: 16 }}>
+              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ 
+                  width: 28, height: 28, borderRadius: '50%', background: '#1890ff', 
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 'bold'
+                }}>1</span>
+                <Text>前往 <a href="/datasets" style={{ fontWeight: 'bold' }}>数据集管理</a> 页面</Text>
+              </div>
+              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ 
+                  width: 28, height: 28, borderRadius: '50%', background: '#1890ff', 
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 'bold'
+                }}>2</span>
+                <Text>点击「新建数据集」创建一个数据集</Text>
+              </div>
+              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ 
+                  width: 28, height: 28, borderRadius: '50%', background: '#1890ff', 
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 'bold'
+                }}>3</span>
+                <Text>在数据集详情页点击「从 HuggingFace 下载」输入数据集 ID（如 <code style={{ background: '#f5f5f5', padding: '2px 6px', borderRadius: 4 }}>opencompass/PerceptionTest</code>）</Text>
+              </div>
+              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ 
+                  width: 28, height: 28, borderRadius: '50%', background: '#52c41a', 
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 'bold'
+                }}>✓</span>
+                <Text>下载完成后即可查看、可视化、转换数据</Text>
+              </div>
+            </div>
+            
+            <div style={{ marginTop: 16 }}>
+              <Button type="primary" href="/datasets">
+                立即创建数据集
+              </Button>
+            </div>
           </div>
         </Card>
       )}
