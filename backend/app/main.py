@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import init_db, close_db
-from app.api import auth, api_keys, datasets, tasks, ai, files, statistics, search, tools, backups
+from app.api import auth, api_keys, datasets, tasks, ai, files, statistics, search, tools, backups, bugs, monitoring, versions
 
 
 @asynccontextmanager
@@ -49,6 +49,9 @@ app.include_router(files.router, prefix=settings.API_V1_PREFIX)
 app.include_router(statistics.router, prefix=settings.API_V1_PREFIX)
 app.include_router(tools.router, prefix=settings.API_V1_PREFIX)
 app.include_router(backups.router, prefix=settings.API_V1_PREFIX)
+app.include_router(bugs.router, prefix=settings.API_V1_PREFIX)
+app.include_router(monitoring.router, prefix=settings.API_V1_PREFIX)
+app.include_router(versions.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/")
