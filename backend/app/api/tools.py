@@ -18,7 +18,8 @@ from app.models.dataset import Dataset, DataFile
 from app.models.task import Task, TaskStatus, TaskType
 from app.schemas import TaskResponse, MessageResponse
 from app.services.conversion import conversion_service
-from app.services.export import export_service
+from app.services.schema_mapping import schema_mapping_service
+import fnmatch
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
@@ -144,6 +145,181 @@ async def convert_annotations(
     
     await db.refresh(task)
     return task
+
+
+# ==================== Schema Mapping ====================
+
+class SchemaMappingRequest(BaseModel):
+    """Request for JSON schema transformation."""
+    mapping: dict
+    output_filename: Optional[str] = None
+    options: Optional[dict] = None
+
+
+class InferMappingRequest(BaseModel):
+    """Request to infer mapping from samples."""
+    source_sample: dict
+    target_sample: dict
+
+
+@router.post("/files/{file_id}/transform-schema")
+async def transform_file_schema(
+    file_id: int,
+    request: SchemaMappingRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Transform a JSON/JSONL file based on field mapping.
+    
+    Mapping format:
+    ```json
+    {
+        "field_mappings": {
+            "old_field": "new_field",
+            "image_path": "image",
+            "caption": "text"
+        },
+        "value_transforms": {
+            "status": {
+                "type": "rename_values",
+                "mappings": {"old": "new"}
+            },
+            "name": {"type": "case", "case": "lower"}
+        },
+        "field_operations": {
+            "full_name": {
+                "type": "concat",
+                "sources": ["first_name", "last_name"],
+                "separator": " "
+            }
+        },
+        "exclude_fields": ["internal_id"],
+        "add_fields": {"version": "1.0"}
+    }
+    ```
+    """
+    result = await db.execute(
+        select(DataFile)
+        .options(selectinload(DataFile.dataset))
+        .where(DataFile.id == file_id)
+    )
+    file = result.scalar_one_or_none()
+    
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    if file.dataset.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Only JSON/JSONL files
+    if not file.filename.lower().endswith(('.json', '.jsonl')):
+        raise HTTPException(status_code=400, detail="Only JSON/JSONL files are supported")
+    
+    input_path = Path(settings.DATA_STORAGE_PATH) / file.relative_path
+    
+    # Determine output path
+    output_filename = request.output_filename or f"{file.stem}_transformed{file.suffix}"
+    output_path = Path(settings.DATA_STORAGE_PATH) / file.dataset.storage_path / output_filename
+    
+    try:
+        stats = await schema_mapping_service.transform_file(
+            input_path=input_path,
+            output_path=output_path,
+            mapping=request.mapping,
+            options=request.options,
+        )
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/infer-mapping")
+async def infer_mapping(
+    request: InferMappingRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Infer field mapping from source and target samples."""
+    mapping = schema_mapping_service.infer_mapping_from_samples(
+        source_sample=request.source_sample,
+        target_sample=request.target_sample,
+    )
+    return mapping
+
+
+@router.post("/validate-mapping")
+async def validate_mapping(
+    mapping: dict,
+    current_user: User = Depends(get_current_user),
+):
+    """Validate a schema mapping configuration."""
+    result = schema_mapping_service.validate_mapping(mapping)
+    return result
+
+
+@router.post("/datasets/{dataset_id}/transform-all")
+async def transform_dataset_files(
+    dataset_id: int,
+    request: SchemaMappingRequest,
+    file_pattern: str = Query("*.json", description="Glob pattern for files to transform"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Transform all matching files in a dataset based on schema mapping."""
+    result = await db.execute(
+        select(Dataset).where(Dataset.id == dataset_id, Dataset.user_id == current_user.id)
+    )
+    dataset = result.scalar_one_or_none()
+    
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    result = await db.execute(
+        select(DataFile).where(
+            DataFile.dataset_id == dataset_id,
+            DataFile.filename.ilike(f"%{file_pattern.replace('*', '')}%")
+        )
+    )
+    files = result.scalars().all()
+    
+    # Filter by actual pattern
+    import fnmatch
+    files = [f for f in files if fnmatch.fnmatch(f.filename.lower(), file_pattern.lower())]
+    
+    if not files:
+        raise HTTPException(status_code=404, detail="No matching files found")
+    
+    output_dir = Path(settings.DATA_STORAGE_PATH) / dataset.storage_path / "transformed"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    results = []
+    for file in files:
+        if not file.filename.lower().endswith(('.json', '.jsonl')):
+            continue
+        
+        input_path = Path(settings.DATA_STORAGE_PATH) / file.relative_path
+        output_path = output_dir / f"{file.stem}_transformed{file.suffix}"
+        
+        try:
+            stats = await schema_mapping_service.transform_file(
+                input_path=input_path,
+                output_path=output_path,
+                mapping=request.mapping,
+                options=request.options,
+            )
+            results.append(stats)
+        except Exception as e:
+            results.append({
+                "file": file.filename,
+                "error": str(e),
+            })
+    
+    return {
+        "total_files": len(files),
+        "transformed": len([r for r in results if "error" not in r]),
+        "failed": len([r for r in results if "error" in r]),
+        "results": results,
+    }
 
 
 # ==================== Export ====================
