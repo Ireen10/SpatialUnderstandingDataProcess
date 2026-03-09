@@ -92,15 +92,18 @@ Requirements:
 
 The script will be executed in a sandboxed environment."""
 
+        sample_input_text = f"**Sample input:**\n```json\n{json.dumps(sample_data, indent=2, ensure_ascii=False)}\n```" if sample_data else ""
+        requirements_text = f"**Additional requirements:**\n{requirements}" if requirements else ""
+        
         user_message = f"""Generate a Python script to transform data:
 
 **Source format:** {source_format}
 
 **Target format:** {target_format}
 
-{f"**Sample input:**\\n```json\\n{json.dumps(sample_data, indent=2, ensure_ascii=False)}\\n```" if sample_data else ""}
+{sample_input_text}
 
-{f"**Additional requirements:**\\n{requirements}" if requirements else ""}
+{requirements_text}
 
 Generate the complete Python script with `transform()` and `validate()` functions."""
 
