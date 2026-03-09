@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.orm import selectinload
 import asyncio
 
@@ -131,16 +131,34 @@ async def delete_dataset(
     )
     dataset = result.scalar_one_or_none()
     if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset not found")
+        # Try to find dataset without user filter for debugging
+        debug_result = await db.execute(select(Dataset).where(Dataset.id == dataset_id))
+        debug_dataset = debug_result.scalar_one_or_none()
+        if debug_dataset:
+            print(f"[DELETE ERROR] Dataset {dataset_id} exists but belongs to user {debug_dataset.user_id}, current user: {current_user.id}")
+            raise HTTPException(status_code=403, detail="无权删除此数据集（权限不匹配）")
+        else:
+            print(f"[DELETE ERROR] Dataset {dataset_id} not found in database")
+            raise HTTPException(status_code=404, detail="数据集不存在")
     
     # Delete files from storage
     storage_path = Path(settings.DATA_STORAGE_PATH) / dataset.storage_path
     if storage_path.exists():
         import shutil
+        print(f"[DELETE] Removing storage path: {storage_path}")
         shutil.rmtree(storage_path, ignore_errors=True)
+    else:
+        print(f"[DELETE WARNING] Storage path does not exist: {storage_path}")
+    
+    # Delete associated DataFile records first (cascade should handle this, but be explicit)
+    from app.models.dataset import DataFile
+    await db.execute(
+        delete(DataFile).where(DataFile.dataset_id == dataset_id)
+    )
     
     await db.delete(dataset)
     await db.commit()
+    print(f"[DELETE SUCCESS] Dataset {dataset_id} '{dataset.name}' deleted")
 
 
 @router.get("/{dataset_id}/files", response_model=PaginatedResponse)
