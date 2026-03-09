@@ -78,6 +78,9 @@ class DataFile(Base, TimestampMixin):
     
     # Paired data (for image-text, video-text pairs)
     paired_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Split information (train/val/test)
+    split: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     paired_text_file: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     
     # Custom metadata (JSON)

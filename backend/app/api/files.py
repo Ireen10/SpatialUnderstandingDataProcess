@@ -1,149 +1,135 @@
 """
-File serving and visualization endpoints
+文本文件预览 API
+支持 md/txt/json/jsonl 等文本格式预览
 """
 
-from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-import json
+from pathlib import Path
+from typing import Optional
 
 from app.core.database import get_db
-from app.core.config import settings
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.models.dataset import Dataset, DataFile, DataType
-from app.services.visualization import visualization_service
-from app.services.metadata import metadata_service
+from app.models.dataset import Dataset, DataFile
 
 router = APIRouter(prefix="/files", tags=["files"])
 
 
-@router.get("/{file_id}/raw")
-async def get_raw_file(
-    file_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Serve raw file content."""
-    result = await db.execute(
-        select(DataFile)
-        .options(selectinload(DataFile.dataset))
-        .where(DataFile.id == file_id)
-    )
-    data_file = result.scalar_one_or_none()
-    
-    if not data_file:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    # Check ownership
-    if data_file.dataset.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    
-    file_path = Path(settings.DATA_STORAGE_PATH) / data_file.relative_path
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found on disk")
-    
-    return FileResponse(
-        path=file_path,
-        media_type=data_file.file_type,
-        filename=data_file.filename,
-    )
-
-
 @router.get("/{file_id}/preview")
-async def get_file_preview(
+async def preview_file(
     file_id: int,
+    max_lines: int = Query(100, ge=1, le=1000, description="最大行数"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get file preview data (base64 for images, metadata for videos)."""
+    """
+    预览文本文件内容
+    
+    支持格式：txt, md, json, jsonl, csv, tsv
+    """
+    # 验证文件权限
     result = await db.execute(
-        select(DataFile)
-        .options(selectinload(DataFile.dataset), selectinload(DataFile.file_metadata))
-        .where(DataFile.id == file_id)
+        select(DataFile).where(
+            DataFile.id == file_id,
+            DataFile.dataset_id.in_(
+                select(Dataset.id).where(Dataset.user_id == current_user.id)
+            )
+        )
     )
     data_file = result.scalar_one_or_none()
-    
     if not data_file:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail="文件不存在或无权访问")
     
-    if data_file.dataset.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    # 检查文件类型
+    text_extensions = {'.txt', '.md', '.json', '.jsonl', '.csv', '.tsv', '.xml', '.html'}
+    file_ext = Path(data_file.filename).suffix.lower()
     
-    preview = await visualization_service.get_preview_data(data_file)
+    if file_ext not in text_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"不支持预览的文件格式：{file_ext}",
+        )
     
-    # Add metadata if available
-    if data_file.file_metadata:
-        preview["metadata"] = {
-            "width": data_file.file_metadata.width,
-            "height": data_file.file_metadata.height,
-            "duration": data_file.file_metadata.duration,
-            "fps": data_file.file_metadata.fps,
-            "text_length": data_file.file_metadata.text_length,
-            "word_count": data_file.file_metadata.word_count,
-        }
+    # 构建文件路径
+    if not data_file.relative_path:
+        raise HTTPException(status_code=400, detail="文件路径信息缺失")
     
-    return preview
-
-
-@router.get("/dataset/{dataset_id}/gallery", response_class=HTMLResponse)
-async def get_dataset_gallery(
-    dataset_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Generate HTML gallery for dataset."""
-    result = await db.execute(
-        select(Dataset).where(Dataset.id == dataset_id, Dataset.user_id == current_user.id)
+    # 从 dataset 获取存储路径
+    dataset_result = await db.execute(
+        select(Dataset).where(Dataset.id == data_file.dataset_id)
     )
-    dataset = result.scalar_one_or_none()
-    if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset not found")
+    dataset = dataset_result.scalar_one()
     
-    result = await db.execute(
-        select(DataFile)
-        .where(DataFile.dataset_id == dataset_id)
-        .limit(100)
-    )
-    files = result.scalars().all()
+    file_path = Path(dataset.storage_path) / data_file.relative_path
     
-    html = visualization_service.generate_html_gallery(files, title=dataset.name)
-    return HTMLResponse(content=html)
-
-
-@router.post("/{file_id}/extract-metadata")
-async def extract_file_metadata(
-    file_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Manually extract metadata for a file."""
-    result = await db.execute(
-        select(DataFile)
-        .options(selectinload(DataFile.dataset))
-        .where(DataFile.id == file_id)
-    )
-    data_file = result.scalar_one_or_none()
-    
-    if not data_file:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    if data_file.dataset.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    
-    file_path = Path(settings.DATA_STORAGE_PATH) / data_file.relative_path
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found on disk")
+        raise HTTPException(status_code=404, detail="物理文件不存在")
     
-    metadata = await metadata_service.extract_metadata(data_file, file_path)
+    try:
+        # 读取文件内容
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            lines = []
+            for i, line in enumerate(f):
+                if i >= max_lines:
+                    lines.append(f"\n... (仅显示前 {max_lines} 行，共 {data_file.file_size} 字节)")
+                    break
+                lines.append(line)
+            
+            content = ''.join(lines)
+        
+        return {
+            "file_id": file_id,
+            "filename": data_file.filename,
+            "file_type": data_file.file_type,
+            "file_size": data_file.file_size,
+            "lines_displayed": len(lines),
+            "truncated": len(lines) >= max_lines,
+            "content": content,
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"读取文件失败：{str(e)}")
+
+
+@router.get("/{file_id}/content")
+async def get_file_content(
+    file_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    获取文件完整内容（用于下载或大文件）
+    """
+    # 权限验证（同上）
+    result = await db.execute(
+        select(DataFile).where(
+            DataFile.id == file_id,
+            DataFile.dataset_id.in_(
+                select(Dataset.id).where(Dataset.user_id == current_user.id)
+            )
+        )
+    )
+    data_file = result.scalar_one_or_none()
+    if not data_file:
+        raise HTTPException(status_code=404, detail="文件不存在或无权访问")
     
-    if metadata:
-        db.add(metadata)
-        await db.commit()
-        await db.refresh(metadata)
-        return {"message": "Metadata extracted", "metadata_id": metadata.id}
-    else:
-        return {"message": "No metadata could be extracted"}
+    # 构建路径
+    dataset_result = await db.execute(
+        select(Dataset).where(Dataset.id == data_file.dataset_id)
+    )
+    dataset = dataset_result.scalar_one()
+    
+    file_path = Path(dataset.storage_path) / data_file.relative_path
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="物理文件不存在")
+    
+    # 返回文件
+    from fastapi.responses import FileResponse
+    return FileResponse(
+        path=str(file_path),
+        filename=data_file.filename,
+        media_type=data_file.file_type,
+    )

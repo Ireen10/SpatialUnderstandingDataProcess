@@ -100,11 +100,12 @@ class PreviewService:
         ext = file_path.suffix.lower()
         
         if ext == '.parquet':
-            return pd.read_parquet(file_path)
-        elif ext in ['.csv', '.tsv']:
-            sep = '\t' if ext == '.tsv' else ','
-            return pd.read_csv(file_path, sep=sep, low_memory=False)
-        elif ext == '.json':
+            return pd.read_parquet(file_path, engine='pyarrow')
+        elif ext == '.tsv':
+            return pd.read_csv(file_path, sep='\t', low_memory=False)
+        elif ext == '.csv':
+            return pd.read_csv(file_path, low_memory=False)
+        elif ext in ['.json', '.jsonl']:
             return pd.read_json(file_path, lines=True)
         else:
             raise ValueError(f"不支持的文件格式：{ext}")

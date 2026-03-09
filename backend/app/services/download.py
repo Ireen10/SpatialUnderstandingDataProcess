@@ -195,7 +195,17 @@ class DownloadService:
             if not file_path.is_file():
                 continue
             
+            # Skip hidden files and directories
             if file_path.name.startswith('.'):
+                continue
+            
+            # Skip cache directories
+            if '.cache' in [p.name for p in file_path.parents]:
+                continue
+            
+            # Skip common non-data directories
+            skip_dirs = {'__pycache__', 'node_modules', '.git', 'logs', 'temp'}
+            if any(p.name in skip_dirs for p in file_path.parents):
                 continue
             
             relative_path = file_path.relative_to(path)
@@ -203,6 +213,9 @@ class DownloadService:
             
             file_size = file_path.stat().st_size
             total_size += file_size
+            
+            # Extract split information from path/filename
+            split = self._extract_split_info(str(relative_path), file_path.name)
             
             # Determine file type
             ext = file_path.suffix.lower()
@@ -263,7 +276,10 @@ class DownloadService:
                 )
                 
                 if db_session:
+                    data_file.split = split
                     db_session.add(data_file)
+            if existing_file and split:
+                existing_file.split = split
             
             count += 1
         
@@ -288,6 +304,50 @@ class DownloadService:
         dataset.storage_path = str(path.relative_to(self.storage_path))
         
         return count
+    
+    @staticmethod
+    def _extract_split_info(relative_path: str, filename: str) -> Optional[str]:
+        """
+        Extract split information from file path/name.
+        
+        Common patterns:
+        - train.jsonl, val.jsonl, test.jsonl
+        - dataset/train-00000-of-00001.parquet
+        - split=train/..., split=val/...
+        """
+        path_lower = relative_path.lower()
+        filename_lower = filename.lower()
+        
+        # Check common split keywords
+        split_keywords = ['train', 'validation', 'val', 'test', 'dev', 'eval']
+        
+        # Check in path first
+        for keyword in split_keywords:
+            if keyword in path_lower:
+                # Normalize split names
+                if 'validation' in path_lower or ('val' in path_lower and 'validation' not in path_lower):
+                    return 'validation'
+                elif 'train' in path_lower:
+                    return 'train'
+                elif 'test' in path_lower:
+                    return 'test'
+                elif 'dev' in path_lower or 'eval' in path_lower:
+                    return 'validation'
+        
+        # Check in filename
+        for keyword in split_keywords:
+            if keyword in filename_lower:
+                if 'validation' in filename_lower or ('val' in filename_lower and 'validation' not in filename_lower):
+                    return 'validation'
+                elif 'train' in filename_lower:
+                    return 'train'
+                elif 'test' in filename_lower:
+                    return 'test'
+                elif 'dev' in filename_lower or 'eval' in filename_lower:
+                    return 'validation'
+        
+        # Default split name
+        return 'default'
 
 
 # Singleton instance

@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.services.init import init_service
-from app.api import auth, api_keys, datasets, tasks, ai, files, statistics, search, tools, backups, bugs, monitoring, versions, transform, init, preview
+from app.api import auth, api_keys, datasets, tasks, ai, files, statistics, search, tools, backups, bugs, monitoring, versions, transform, init, preview, file_tree
 
 
 @asynccontextmanager
@@ -94,6 +94,7 @@ app.include_router(monitoring.router, prefix=settings.API_V1_PREFIX)
 app.include_router(versions.router, prefix=settings.API_V1_PREFIX)
 app.include_router(transform.router, prefix=settings.API_V1_PREFIX)
 app.include_router(preview.router, prefix=settings.API_V1_PREFIX)
+app.include_router(file_tree.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/")
