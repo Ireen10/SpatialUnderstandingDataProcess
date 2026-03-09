@@ -6,7 +6,7 @@ import {
 } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, DownloadOutlined,
-  ScanOutlined, EyeOutlined
+  ScanOutlined, EyeOutlined, TableOutlined
 } from '@ant-design/icons'
 import { datasetsApi } from '../api'
 import type { ColumnsType } from 'antd/es/table'
@@ -177,6 +177,9 @@ export default function Datasets() {
           </Tooltip>
           <Tooltip title="下载">
             <Button size="small" icon={<DownloadOutlined />} onClick={() => { setSelectedDataset(record); setDownloadModalVisible(true) }} />
+          </Tooltip>
+          <Tooltip title="通用浏览">
+            <Button size="small" icon={<TableOutlined />} onClick={() => navigate(`/datasets/${record.id}/view`)} />
           </Tooltip>
           <Tooltip title="可视化">
             <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/datasets/${record.id}/visualize`)} />

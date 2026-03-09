@@ -1,7 +1,7 @@
 {
   "project": "SpatialUnderstandingDataProcess",
   "branchName": "main",
-  "description": "空间理解多模态 VLM 训练数据处理平台 - 支持多用户、数据获取、AI 辅助可视化与转换、版本管理",
+  "description": "空间理解多模态 VLM 训练数据处理平台 - 支持双角色权限、数据获取、AI 辅助可视化与转换",
   "technicalStack": {
     "backend": "Python 3.10+ / FastAPI",
     "frontend": "React 18+ / TypeScript / Vite",
@@ -9,21 +9,21 @@
     "cache": "Redis 7+",
     "storage": "本地存储 + S3 兼容接口（MinIO/AWS S3/阿里云 OSS）",
     "taskQueue": "Celery 5+ / Redis",
-    "llmProvider": "OpenRouter (z-ai/glm-5)，支持用户自定义",
+    "llmProvider": "OpenRouter (z-ai/glm-5)，仅超级用户可配置",
     "deployment": "Docker / Docker Compose",
     "containerization": "后端/前端/PostgreSQL/Redis 编排"
   },
   "designNotes": {
-    "userSystem": "多用户 + 权限隔离 + API Key 机制 + 配额管理",
+    "userSystem": "双角色权限模型：超级用户（全功能）+ 普通用户（仅浏览/导出），禁用公开注册",
     "storage": "T 级数据，可插拔存储层，路径可配置",
     "trainingTarget": "多模态 VLM 训练",
     "dataFormat": "用户提供目标格式，不定义标准输出",
     "dataTypes": "图像 - 文本、视频 - 文本配对数据（暂不支持点云/网格）",
-    "visualization": "AI 根据数据类型动态生成 HTML 可视化页面",
-    "llmProvider": "OpenRouter z-ai/glm-5，支持用户自定义 URL/API-Key/Model",
+    "visualization": "通用卡片式展示（内置保底）+ AI 自定义可视化（可选）",
+    "llmProvider": "OpenRouter z-ai/glm-5，仅超级用户可配置 Base URL/API-Key/Model",
     "search": "按名称搜索（初期）",
     "noLabeling": "暂不提供标注功能",
-    "qualityCheck": "预留接口，后期实现",
+    "qualityCheck": "AI 辅助分析，无需人工审查代码",
     "backup": "增量备份 + 定时任务 + 大文件优化"
   },
   "userStories": [
@@ -44,19 +44,19 @@
     },
     {
       "id": "US-002",
-      "title": "多用户系统与权限隔离",
-      "description": "作为多用户平台，需要有完整的用户注册、登录和权限管理系统",
+      "title": "双角色权限系统",
+      "description": "作为精简版权限系统，区分超级用户（全功能）和普通用户（仅浏览/导出），禁用公开注册",
       "acceptanceCriteria": [
-        "用户注册/登录功能",
-        "权限分级：管理员/普通用户",
+        "用户登录功能（禁用公开注册）",
+        "权限分级：超级用户/普通用户",
         "用户数据隔离（只能访问自己的数据）",
         "会话管理（JWT）",
-        "API Key 申请与管理功能",
-        "API Key 调用大模型接口的配额限制"
+        "超级用户独享：LLM 配置、AI 功能、数据管理",
+        "普通用户仅限：浏览数据集、导出数据集"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "API Key 用于限制用户调用系统内的大模型接口 - 后端API已完成，前端UI已完成"
+      "passes": false,
+      "notes": "权限收拢，取消用户 API Key 机制，LLM 配置仅超级用户可见 - 待实现"
     },
     {
       "id": "US-003",
@@ -71,7 +71,22 @@
       ],
       "priority": 3,
       "passes": true,
-      "notes": "后端config.py已实现，环境变量配置已完成"
+      "notes": "后端 config.py 已实现，环境变量配置已完成"
+    },
+    {
+      "id": "US-023",
+      "title": "LLM 统一配置管理",
+      "description": "作为超级用户，我可以统一配置 LLM 服务参数，所有 AI 功能使用统一配置",
+      "acceptanceCriteria": [
+        "超级用户专属配置页面（LLM Base URL、API Key、Model Name）",
+        "配置加密存储（数据库）",
+        "普通用户不可见 LLM 配置入口",
+        "AI 服务从数据库读取配置（而非环境变量）",
+        "支持配置更新后立即生效"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "新增需求 - 待实现"
     },
     {
       "id": "US-004",
@@ -84,9 +99,9 @@
         "下载进度显示",
         "下载失败重试机制"
       ],
-      "priority": 4,
+      "priority": 5,
       "passes": true,
-      "notes": "HuggingFace/URL下载已实现，任务队列已集成"
+      "notes": "HuggingFace/URL 下载已实现，任务队列已集成"
     },
     {
       "id": "US-005",
@@ -97,7 +112,7 @@
         "任务状态追踪",
         "后台任务执行"
       ],
-      "priority": 5,
+      "priority": 6,
       "passes": true,
       "notes": "基础任务队列已集成"
     },
@@ -113,9 +128,9 @@
         "支持数据路径扫描和增量更新",
         "支持大规模文件索引（T 级数据优化）"
       ],
-      "priority": 6,
+      "priority": 7,
       "passes": true,
-      "notes": "基础索引已实现，T级数据优化待后续迭代"
+      "notes": "基础索引已实现，T 级数据优化待后续迭代"
     },
     {
       "id": "US-007",
@@ -127,28 +142,28 @@
         "支持自定义元数据字段",
         "元数据与原始数据关联"
       ],
-      "priority": 7,
+      "priority": 8,
       "passes": true,
       "notes": "图片/视频/文本元数据提取已实现"
     },
     {
       "id": "US-008",
-      "title": "数据可视化模块 - 基础框架",
-      "description": "构建可扩展的数据可视化框架，支持 AI 动态生成可视化页面",
+      "title": "数据可视化模块 - 通用卡片式展示（保底方案）",
+      "description": "内置通用卡片式可视化组件，支持图像/视频数据集开箱即用，无需 AI 生成",
       "acceptanceCriteria": [
-        "可视化插件架构设计",
-        "支持 2D 图像预览（单图/多图）",
-        "支持视频播放（HTML5）",
-        "支持图像 - 文本配对展示",
-        "支持视频 - 文本配对展示",
-        "AI 根据数据类型动态生成 HTML 可视化页面",
-        "可视化风格统一（模板系统）",
-        "Web 界面集成",
-        "支持手动刷新加载新增数据"
+        "卡片网格布局（每页 50 个，最多 30 页）",
+        "自动识别 image 字段（大小写不敏感）",
+        "支持多张图片按顺序全部显示",
+        "图片自动下载保存到 数据集/images/ 目录",
+        "视频提取第一帧作为封面（保存到 数据集/covers/）",
+        "支持图片 URL/Base64/路径三种来源",
+        "其他字段 JSON 格式显示在卡片下方",
+        "分页导航 + 懒加载",
+        "图片点击放大预览"
       ],
-      "priority": 8,
-      "passes": true,
-      "notes": "基础可视化已完成，AI生成可视化代码功能已实现"
+      "priority": 9,
+      "passes": false,
+      "notes": "新增保底方案 - 待实现。特殊数据集可定制 AI 生成可视化"
     },
     {
       "id": "US-009",
@@ -161,41 +176,41 @@
         "转换结果验证",
         "转换日志记录"
       ],
-      "priority": 9,
+      "priority": 10,
       "passes": true,
-      "notes": "JSON/JSONL/CSV转换完成，COCO/YOLO标注转换完成"
+      "notes": "JSON/JSONL/CSV 转换完成，COCO/YOLO 标注转换完成"
     },
     {
       "id": "US-010",
       "title": "AI Coding 辅助 - 转换脚本生成",
-      "description": "用户可以用自然语言描述目标格式，AI 自动生成转换脚本",
+      "description": "超级用户可以用自然语言描述目标格式，AI 自动生成转换脚本",
       "acceptanceCriteria": [
-        "接入 OpenRouter GLM-5 API（默认 model: z-ai/glm-5）",
-        "支持用户自定义 API URL、API-Key、Model Name",
-        "用户 API Key 配额管理",
+        "使用统一 LLM 配置（超级用户配置）",
         "支持自然语言 prompt 输入",
         "AI 生成 Python 转换脚本或 HTML 可视化代码",
         "脚本沙箱执行环境",
-        "转换结果自动验证"
+        "转换结果自动验证",
+        "普通用户不可见 AI 功能入口"
       ],
-      "priority": 10,
-      "passes": true,
-      "notes": "AI服务已实现，支持可视化代码/转换脚本生成、数据质量分析、聊天助手"
+      "priority": 11,
+      "passes": false,
+      "notes": "AI 服务已实现，需调整为仅超级用户可用"
     },
     {
       "id": "US-011",
       "title": "数据 Bug 标记与 AI 修复",
-      "description": "用户可以标记有问题的数据，AI 执行修复",
+      "description": "超级用户可以标记有问题的数据，AI 执行修复",
       "acceptanceCriteria": [
         "数据标记界面（标注问题类型）",
         "问题分类（格式错误/标注错误/数据损坏等）",
         "AI 分析并生成修复方案",
         "批量修复能力",
-        "修复前后对比"
+        "修复前后对比",
+        "普通用户不可见"
       ],
-      "priority": 11,
-      "passes": true,
-      "notes": "Bug报告、状态追踪、AI分析建议已实现"
+      "priority": 12,
+      "passes": false,
+      "notes": "Bug 报告、状态追踪、AI 分析建议已实现，需调整为仅超级用户可用"
     },
     {
       "id": "US-012",
@@ -207,9 +222,9 @@
         "版本回滚能力",
         "版本元数据记录（操作者、时间、变更描述）"
       ],
-      "priority": 12,
+      "priority": 13,
       "passes": true,
-      "notes": "版本快照、恢复、对比功能已实现，支持DVC/Git集成"
+      "notes": "版本快照、恢复、对比功能已实现，支持 DVC/Git 集成"
     },
     {
       "id": "US-013",
@@ -222,9 +237,9 @@
         "按时间统计（新增/修改）",
         "可视化统计图表"
       ],
-      "priority": 13,
+      "priority": 14,
       "passes": true,
-      "notes": "统计API和仪表盘已完成"
+      "notes": "统计 API 和仪表盘已完成"
     },
     {
       "id": "US-014",
@@ -237,9 +252,9 @@
         "导出任务进度显示",
         "导出历史记录"
       ],
-      "priority": 14,
+      "priority": 15,
       "passes": true,
-      "notes": "ZIP/TAR导出、训练格式导出、筛选导出已完成"
+      "notes": "ZIP/TAR 导出、训练格式导出、筛选导出已完成"
     },
     {
       "id": "US-015",
@@ -252,9 +267,9 @@
         "任务失败重试",
         "任务历史记录"
       ],
-      "priority": 15,
+      "priority": 16,
       "passes": true,
-      "notes": "任务模型和API已完成，基础异步处理已实现"
+      "notes": "任务模型和 API 已完成，基础异步处理已实现"
     },
     {
       "id": "US-016",
@@ -266,7 +281,7 @@
         "错误日志告警",
         "性能指标监控"
       ],
-      "priority": 16,
+      "priority": 17,
       "passes": true,
       "notes": "审计日志、系统监控、健康检查已实现"
     },
@@ -281,9 +296,9 @@
         "日志持久化",
         "配置备份"
       ],
-      "priority": 17,
+      "priority": 18,
       "passes": true,
-      "notes": "Docker配置已完成，Celery Worker已配置"
+      "notes": "Docker 配置已完成，Celery Worker 已配置"
     },
     {
       "id": "US-018",
@@ -295,9 +310,9 @@
         "搜索结果列表展示",
         "支持按用户隔离搜索结果"
       ],
-      "priority": 18,
+      "priority": 19,
       "passes": true,
-      "notes": "文件和数据库搜索API已完成"
+      "notes": "文件和数据库搜索 API 已完成"
     },
     {
       "id": "US-019",
@@ -311,7 +326,7 @@
         "支持从备份恢复",
         "大文件备份优化策略"
       ],
-      "priority": 19,
+      "priority": 20,
       "passes": true,
       "notes": "完整备份/增量备份、恢复、清理已完成"
     },
@@ -324,9 +339,9 @@
         "预留扩展点",
         "文档说明未来扩展方向"
       ],
-      "priority": 20,
+      "priority": 21,
       "passes": true,
-      "notes": "AI质量分析接口已在ai.py中实现"
+      "notes": "AI 质量分析接口已在 ai.py 中实现"
     },
     {
       "id": "US-021",
@@ -335,32 +350,32 @@
       "acceptanceCriteria": [
         "首次启动检测：检查是否已完成初始化",
         "数据存放地址配置（强制）",
-        "管理员账户创建（强制，第一个用户）",
-        "API配置（选填）：Base URL、API Key",
-        "代理设置（选填）：HTTP/HTTPS代理",
+        "超级用户账户创建（强制，第一个用户）",
+        "LLM 配置（选填）：Base URL、API Key、Model Name",
+        "代理设置（选填）：HTTP/HTTPS 代理",
         "存储后端选择（选填）：本地/S3/MinIO",
         "配置文件持久化存储",
         "配置项可在设置中修改",
         "引导界面友好，有说明提示"
       ],
-      "priority": 21,
-      "passes": true,
-      "notes": "开箱即用体验的核心功能，前端向导已完成"
+      "priority": 22,
+      "passes": false,
+      "notes": "需调整为 LLM 配置保存到数据库，支持后续在设置页面修改"
     },
     {
       "id": "US-022",
       "title": "一键部署与生产环境支持",
       "description": "提供开箱即用的部署方案，用户下载后可直接使用",
       "acceptanceCriteria": [
-        "Windows一键部署脚本 deploy.bat",
-        "Linux/Mac一键部署脚本 deploy.sh",
-        "Docker Compose生产环境编排",
-        "Nginx反向代理统一入口",
-        "自动检测局域网IP显示访问地址",
+        "Windows 一键部署脚本 deploy.bat",
+        "Linux/Mac 一键部署脚本 deploy.sh",
+        "Docker Compose 生产环境编排",
+        "Nginx 反向代理统一入口",
+        "自动检测局域网 IP 显示访问地址",
         "环境配置模板 .env.example",
-        "完整的README部署说明"
+        "完整的 README 部署说明"
       ],
-      "priority": 22,
+      "priority": 23,
       "passes": true,
       "notes": "支持开发模式和生产模式部署"
     }
