@@ -6,7 +6,7 @@ import {
 } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, DownloadOutlined,
-  ScanOutlined, EyeOutlined, TableOutlined
+  ScanOutlined, EyeOutlined, TableOutlined, FolderOutlined
 } from '@ant-design/icons'
 import { datasetsApi } from '../api'
 import type { ColumnsType } from 'antd/es/table'
@@ -177,6 +177,9 @@ export default function Datasets() {
           </Tooltip>
           <Tooltip title="下载">
             <Button size="small" icon={<DownloadOutlined />} onClick={() => { setSelectedDataset(record); setDownloadModalVisible(true) }} />
+          </Tooltip>
+          <Tooltip title="文件树">
+            <Button size="small" icon={<FolderOutlined />} onClick={() => navigate(`/datasets/${record.id}/files`)} />
           </Tooltip>
           <Tooltip title="通用浏览">
             <Button size="small" icon={<TableOutlined />} onClick={() => navigate(`/datasets/${record.id}/view`)} />

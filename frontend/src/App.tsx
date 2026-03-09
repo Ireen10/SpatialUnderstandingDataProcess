@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard'
 import Datasets from './pages/Datasets'
 import DatasetVisualizer from './pages/DatasetVisualizer'
 import UniversalViewer from './pages/UniversalViewer'
+import DatasetFiles from './pages/DatasetFiles'
 import ApiKeys from './pages/ApiKeys'
 import AIAssistant from './pages/AIAssistant'
 import Settings from './pages/Settings'
@@ -91,6 +92,7 @@ function App() {
           <Route path="datasets" element={<Datasets />} />
           <Route path="datasets/:id/visualize" element={<DatasetVisualizer />} />
 <Route path="datasets/:id/view" element={<UniversalViewer />} />
+<Route path="datasets/:id/files" element={<DatasetFiles />} />
           <Route path="api-keys" element={<ApiKeys />} />
           <Route path="ai-assistant" element={<AIAssistant />} />
           <Route path="settings" element={<Settings />} />
