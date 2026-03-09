@@ -36,7 +36,7 @@ export default function FirstTimeSetup() {
     try {
       // 1. 初始化系统
       const initData = {
-        data_path: values.data_path || './data',
+        data_path: values.data_path || '../data',
         admin_username: values.username || 'admin',
         admin_email: values.email,
         admin_password: values.password,
@@ -151,7 +151,7 @@ export default function FirstTimeSetup() {
           form={form}
           layout="vertical"
           onFinish={handleFinish}
-          initialValues={{ data_path: './data' }}
+          initialValues={{ data_path: '../data' }}
         >
           <Form.Item
             name="username"
