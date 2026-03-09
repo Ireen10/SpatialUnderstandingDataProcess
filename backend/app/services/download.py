@@ -176,13 +176,15 @@ class DownloadService:
     
     async def _index_downloaded_files(self, path: Path, dataset: Dataset, db_session=None) -> int:
         """
-        Scan directory and create DataFile records.
+        Scan directory and create/update DataFile records.
+        Removes old records that no longer exist.
         
         Returns:
             Number of files indexed
         """
         count = 0
         total_size = 0
+        current_files = set()  # Track current relative paths
         
         # File type mappings
         image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.tif'}
@@ -197,6 +199,8 @@ class DownloadService:
                 continue
             
             relative_path = file_path.relative_to(path)
+            current_files.add(str(relative_path))
+            
             file_size = file_path.stat().st_size
             total_size += file_size
             
@@ -226,22 +230,57 @@ class DownloadService:
                     if json_file.exists():
                         paired_text = json_file.read_text(encoding='utf-8', errors='ignore')
             
-            # Create DataFile record (will be added to session by caller)
-            data_file = DataFile(
-                dataset_id=dataset.id,
-                filename=file_path.name,
-                relative_path=str(relative_path),
-                file_size=file_size,
-                file_type=file_type,
-                data_type=data_type,
-                status=DataStatus.READY.value,
-                paired_text=paired_text,
-            )
-            
+            # Check if file already exists
+            existing_file = None
             if db_session:
-                db_session.add(data_file)
+                from sqlalchemy import select
+                result = await db_session.execute(
+                    select(DataFile).where(
+                        DataFile.dataset_id == dataset.id,
+                        DataFile.relative_path == str(relative_path)
+                    )
+                )
+                existing_file = result.scalar_one_or_none()
+            
+            if existing_file:
+                # Update existing record
+                existing_file.file_size = file_size
+                existing_file.file_type = file_type
+                existing_file.data_type = data_type
+                existing_file.status = DataStatus.READY.value
+                existing_file.paired_text = paired_text
+            else:
+                # Create new record
+                data_file = DataFile(
+                    dataset_id=dataset.id,
+                    filename=file_path.name,
+                    relative_path=str(relative_path),
+                    file_size=file_size,
+                    file_type=file_type,
+                    data_type=data_type,
+                    status=DataStatus.READY.value,
+                    paired_text=paired_text,
+                )
+                
+                if db_session:
+                    db_session.add(data_file)
             
             count += 1
+        
+        # Remove old files that no longer exist
+        if db_session and current_files:
+            from sqlalchemy import select, delete
+            result = await db_session.execute(
+                select(DataFile.id).where(
+                    DataFile.dataset_id == dataset.id,
+                    DataFile.relative_path.not_in(current_files)
+                )
+            )
+            old_ids = [r[0] for r in result.all()]
+            if old_ids:
+                await db_session.execute(
+                    delete(DataFile).where(DataFile.id.in_(old_ids))
+                )
         
         # Update dataset stats
         dataset.total_files = count
