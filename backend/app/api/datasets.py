@@ -141,24 +141,33 @@ async def delete_dataset(
             print(f"[DELETE ERROR] Dataset {dataset_id} not found in database")
             raise HTTPException(status_code=404, detail="数据集不存在")
     
-    # Delete files from storage
+    # Delete files from storage (ignore if path doesn't exist)
     storage_path = Path(settings.DATA_STORAGE_PATH) / dataset.storage_path
     if storage_path.exists():
         import shutil
         print(f"[DELETE] Removing storage path: {storage_path}")
         shutil.rmtree(storage_path, ignore_errors=True)
     else:
-        print(f"[DELETE WARNING] Storage path does not exist: {storage_path}")
+        print(f"[DELETE WARNING] Storage path does not exist (may be manually deleted): {storage_path}")
     
-    # Delete associated DataFile records first (cascade should handle this, but be explicit)
+    # Delete associated DataFile records first (explicit cascade)
     from app.models.dataset import DataFile
+    result = await db.execute(
+        select(DataFile).where(DataFile.dataset_id == dataset_id)
+    )
+    files = result.scalars().all()
+    print(f"[DELETE] Deleting {len(files)} file records from database")
+    
     await db.execute(
         delete(DataFile).where(DataFile.dataset_id == dataset_id)
     )
     
+    # Delete dataset record
+    dataset_name = dataset.name
     await db.delete(dataset)
     await db.commit()
-    print(f"[DELETE SUCCESS] Dataset {dataset_id} '{dataset.name}' deleted")
+    
+    print(f"[DELETE SUCCESS] Dataset {dataset_id} '{dataset_name}' and {len(files)} files deleted")
 
 
 @router.get("/{dataset_id}/files", response_model=PaginatedResponse)

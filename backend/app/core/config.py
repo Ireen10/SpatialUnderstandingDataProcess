@@ -39,8 +39,8 @@ class Settings(BaseSettings):
     
     # Storage
     DATA_STORAGE_PATH: str = Field(
-        default="./data",
-        description="Path to store data files"
+        default="../data",
+        description="Path to store data files (relative to backend/)"
     )
     STORAGE_BACKEND: str = Field(
         default="local",
