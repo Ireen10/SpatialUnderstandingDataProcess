@@ -8,7 +8,8 @@ import {
   PlusOutlined, DeleteOutlined, DownloadOutlined,
   ScanOutlined, EyeOutlined, TableOutlined, FolderOutlined
 } from '@ant-design/icons'
-import { datasetsApi } from '../api'
+import { datasetsApi, tasksApi } from '../api'
+import DownloadProgressModal from '../components/DownloadProgressModal'
 import type { ColumnsType } from 'antd/es/table'
 
 const { Title } = Typography
@@ -46,6 +47,8 @@ export default function Datasets() {
   const [form] = Form.useForm()
   const [downloadForm] = Form.useForm()
   const [downloadLoading, setDownloadLoading] = useState(false)
+  const [progressVisible, setProgressVisible] = useState(false)
+  const [currentTaskId, setCurrentTaskId] = useState<number | null>(null)
 
   const fetchDatasets = async () => {
     setLoading(true)
@@ -125,14 +128,25 @@ export default function Datasets() {
     
     setDownloadLoading(true)
     try {
+      let taskId: number | null = null
+      
       if (values.type === 'huggingface') {
-        await datasetsApi.downloadFromHuggingface(selectedDataset.id, values.repo_id!, values.allow_patterns)
+        const { data } = await datasetsApi.downloadFromHuggingface(selectedDataset.id, values.repo_id!, values.allow_patterns)
+        taskId = data.task_id || null
       } else {
-        await datasetsApi.downloadFromUrl(selectedDataset.id, values.url!)
+        const { data } = await datasetsApi.downloadFromUrl(selectedDataset.id, values.url!)
+        taskId = data.task_id || null
       }
+      
       message.success('下载任务已创建')
       setDownloadModalVisible(false)
       downloadForm.resetFields()
+      
+      // 显示进度弹窗
+      if (taskId) {
+        setCurrentTaskId(taskId)
+        setProgressVisible(true)
+      }
     } catch (error: any) {
       message.error(error.response?.data?.detail || '创建下载任务失败')
     } finally {
@@ -340,6 +354,28 @@ export default function Datasets() {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* 下载进度弹窗 */}
+      <DownloadProgressModal
+        visible={progressVisible}
+        datasetId={selectedDataset?.id || null}
+        taskId={currentTaskId}
+        onClose={() => {
+          setProgressVisible(false)
+          setCurrentTaskId(null)
+          fetchDatasets() // 刷新列表
+          if (selectedDataset) {
+            fetchFiles(selectedDataset.id)
+          }
+        }}
+        onComplete={() => {
+          // 下载完成后自动刷新
+          fetchDatasets()
+          if (selectedDataset) {
+            fetchFiles(selectedDataset.id)
+          }
+        }}
+      />
     </div>
   )
 }
