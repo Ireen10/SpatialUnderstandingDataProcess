@@ -44,6 +44,7 @@ export default function Datasets() {
   const [selectedDataset, setSelectedDataset] = useState<DatasetItem | null>(null)
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [downloadModalVisible, setDownloadModalVisible] = useState(false)
+  const [newDatasetId, setNewDatasetId] = useState<number | null>(null)
   const [form] = Form.useForm()
   const [downloadForm] = Form.useForm()
   const [downloadLoading, setDownloadLoading] = useState(false)
@@ -83,15 +84,21 @@ export default function Datasets() {
 
   const handleCreate = async (values: { name: string; description?: string; storage_path?: string }) => {
     try {
-      await datasetsApi.create({
+      const { data } = await datasetsApi.create({
         name: values.name,
         description: values.description,
-        storage_path: values.storage_path || 'datasets',
+        storage_path: values.name, // 使用数据集名作为文件夹名
       })
-      message.success('创建成功')
+      
+      message.success('创建成功，请配置下载源')
       setCreateModalVisible(false)
       form.resetFields()
-      fetchDatasets()
+      
+      // 设置当前数据集并打开下载窗口
+      const newId = data.id
+      setNewDatasetId(newId)
+      setSelectedDataset({ ...data, total_files: 0, total_size: 0 })
+      setDownloadModalVisible(true)
     } catch (error) {
       message.error('创建失败')
     }
@@ -124,23 +131,25 @@ export default function Datasets() {
   }
 
   const handleDownload = async (values: { type: 'huggingface' | 'url'; repo_id?: string; url?: string; allow_patterns?: string }) => {
-    if (!selectedDataset) return
+    const targetDatasetId = newDatasetId || selectedDataset?.id
+    if (!targetDatasetId) return
     
     setDownloadLoading(true)
     try {
       let taskId: number | null = null
       
       if (values.type === 'huggingface') {
-        const { data } = await datasetsApi.downloadFromHuggingface(selectedDataset.id, values.repo_id!, values.allow_patterns)
+        const { data } = await datasetsApi.downloadFromHuggingface(targetDatasetId, values.repo_id!, values.allow_patterns)
         taskId = data.task_id || null
       } else {
-        const { data } = await datasetsApi.downloadFromUrl(selectedDataset.id, values.url!)
+        const { data } = await datasetsApi.downloadFromUrl(targetDatasetId, values.url!)
         taskId = data.task_id || null
       }
       
       message.success('下载任务已创建')
       setDownloadModalVisible(false)
       downloadForm.resetFields()
+      setNewDatasetId(null) // 清空临时状态
       
       // 显示进度弹窗
       if (taskId) {
@@ -313,13 +322,28 @@ export default function Datasets() {
 
       {/* 下载数据模态框 */}
       <Modal
-        title="下载数据"
+        title={newDatasetId ? "新建数据集 - 配置下载源" : "下载数据"}
         open={downloadModalVisible}
-        onCancel={() => { setDownloadModalVisible(false); downloadForm.resetFields() }}
+        onCancel={() => { 
+          if (!newDatasetId) {
+            setDownloadModalVisible(false)
+            downloadForm.resetFields()
+          }
+        }}
         onOk={() => downloadForm.submit()}
         okText="开始下载"
         confirmLoading={downloadLoading}
+        closable={!newDatasetId}
       >
+        {newDatasetId && (
+          <Alert
+            message="提示"
+            description="创建数据集后需要下载数据才能使用。请选择数据源并配置下载参数。"
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <Form form={downloadForm} layout="vertical" onFinish={handleDownload}>
           <Form.Item name="type" label="下载源" initialValue="huggingface" rules={[{ required: true }]}>
             <Select>
@@ -360,18 +384,22 @@ export default function Datasets() {
         visible={progressVisible}
         datasetId={selectedDataset?.id || null}
         taskId={currentTaskId}
-        onClose={() => {
+        isNewDataset={!!newDatasetId}
+        onClose={(cancelled) => {
           setProgressVisible(false)
           setCurrentTaskId(null)
-          fetchDatasets() // 刷新列表
-          if (selectedDataset) {
-            fetchFiles(selectedDataset.id)
+          if (!cancelled && !newDatasetId) {
+            fetchDatasets()
+            if (selectedDataset) {
+              fetchFiles(selectedDataset.id)
+            }
           }
         }}
         onComplete={() => {
           // 下载完成后自动刷新
           fetchDatasets()
-          if (selectedDataset) {
+          setNewDatasetId(null)
+          if (selectedDataset && !newDatasetId) {
             fetchFiles(selectedDataset.id)
           }
         }}

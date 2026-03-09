@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Modal, Progress, Spin, Empty, Tag, Space, Typography, Button, message } from 'antd'
+import { Modal, Progress, Spin, Empty, Tag, Space, Typography, Button, message, Alert } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from '@ant-design/icons'
 import { tasksApi } from '../api'
 
@@ -9,7 +9,8 @@ interface DownloadProgressModalProps {
   visible: boolean
   datasetId: number | null
   taskId: number | null
-  onClose: () => void
+  isNewDataset?: boolean
+  onClose: (cancelled: boolean) => void
   onComplete: () => void
 }
 
@@ -17,6 +18,7 @@ export default function DownloadProgressModal({
   visible,
   datasetId,
   taskId,
+  isNewDataset = false,
   onClose,
   onComplete,
 }: DownloadProgressModalProps) {
@@ -53,6 +55,14 @@ export default function DownloadProgressModal({
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleClose = () => {
+    if (isNewDataset && task?.status === 'running') {
+      message.warning('下载进行中，请勿关闭')
+      return
+    }
+    onClose(false)
   }
 
   const getProgressStatus = () => {
@@ -131,17 +141,18 @@ export default function DownloadProgressModal({
         </Space>
       }
       open={visible}
-      onCancel={onClose}
+      onCancel={handleClose}
       footer={[
         <Button 
           key="close" 
-          onClick={onClose}
-          disabled={task?.status === 'running'}
+          onClick={handleClose}
+          disabled={isNewDataset && task?.status === 'running'}
+          type={isNewDataset && task?.status === 'running' ? 'default' : 'primary'}
         >
-          {task?.status === 'running' ? '下载中...' : '关闭'}
+          {isNewDataset && task?.status === 'running' ? '下载中...' : '关闭'}
         </Button>,
       ]}
-      closable={task?.status !== 'running'}
+      closable={!isNewDataset || task?.status !== 'running'}
       width={500}
     >
       {loading && !task ? (
@@ -150,6 +161,17 @@ export default function DownloadProgressModal({
         </div>
       ) : task ? (
         <div style={{ padding: '20px 0' }}>
+          {/* 新建数据集提示 */}
+          {isNewDataset && (
+            <Alert
+              message="新建数据集流程"
+              description="下载完成后，数据集将自动出现在列表中"
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+          )}
+
           {/* 状态标签 */}
           <div style={{ marginBottom: 16 }}>
             <Space>
