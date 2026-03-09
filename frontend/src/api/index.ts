@@ -70,8 +70,8 @@ export const apiKeysApi = {
 
 // Datasets
 export const datasetsApi = {
-  list: (params?: { page?: number; page_size?: number }) =>
-    api.get('/datasets', { params }),
+  list: (params?: { page?: number; page_size?: number; scan?: boolean }) =>
+    api.get('/datasets', { params: { scan: true, ...params } }),
   get: (id: number) => api.get(`/datasets/${id}`),
   create: (data: { name: string; description?: string; storage_path?: string }) => api.post('/datasets', data),
   update: (id: number, data: { name?: string; description?: string }) =>

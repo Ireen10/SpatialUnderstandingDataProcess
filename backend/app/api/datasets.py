@@ -27,14 +27,64 @@ from app.services.metadata import metadata_service
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
 
+async def _auto_sync_datasets(current_user: User, db: AsyncSession):
+    """
+    自动扫描数据目录并同步数据集。
+    规则：data/ 下每个一级文件夹 = 1 个数据集。
+    """
+    storage_root = Path(settings.DATA_STORAGE_PATH)
+    if not storage_root.exists():
+        return
+
+    # 当前数据库中的数据集（仅当前用户）
+    result = await db.execute(
+        select(Dataset).where(Dataset.user_id == current_user.id)
+    )
+    existing = {d.name: d for d in result.scalars().all()}
+
+    # 扫描 data 根目录下一级文件夹
+    for item in storage_root.iterdir():
+        if not item.is_dir():
+            continue
+        if item.name.startswith('.'):
+            continue
+        if item.name in {"__pycache__", "logs", "temp", "node_modules"}:
+            continue
+
+        dataset_name = item.name
+        if dataset_name not in existing:
+            dataset = Dataset(
+                user_id=current_user.id,
+                name=dataset_name,
+                description=f"Auto-discovered from folder: {dataset_name}",
+                storage_path=dataset_name,
+            )
+            db.add(dataset)
+            print(f"[AUTO-SYNC] 新增数据集: {dataset_name}")
+
+    # 反向清理：数据库有但目录不存在的数据集，自动删除
+    for name, ds in existing.items():
+        folder = storage_root / ds.storage_path
+        if not folder.exists():
+            print(f"[AUTO-SYNC] 清理缺失目录的数据集: {name}")
+            await db.execute(delete(DataFile).where(DataFile.dataset_id == ds.id))
+            await db.delete(ds)
+
+    await db.commit()
+
+
 @router.get("", response_model=PaginatedResponse)
 async def list_datasets(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    scan: bool = Query(True, description="是否自动扫描数据目录"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List user's datasets."""
+    if scan:
+        await _auto_sync_datasets(current_user, db)
+
     # Count total
     count_result = await db.execute(
         select(func.count(Dataset.id)).where(Dataset.user_id == current_user.id)
