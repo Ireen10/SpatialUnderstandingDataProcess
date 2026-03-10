@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { Layout, Menu } from 'antd'
 import {
   DashboardOutlined,
+  AppstoreOutlined,
   DatabaseOutlined,
   KeyOutlined,
   SettingOutlined,
@@ -18,6 +19,7 @@ const menuItems = [
   { key: '/datasets', icon: <DatabaseOutlined />, label: '数据集' },
   { key: '/api-keys', icon: <KeyOutlined />, label: 'API Keys' },
   { key: '/ai-assistant', icon: <RobotOutlined />, label: 'AI 助手' },
+  { key: '/workflow-designer', icon: <AppstoreOutlined />, label: '流程设计器' },
   { key: '/settings', icon: <SettingOutlined />, label: '设置' },
 ]
 

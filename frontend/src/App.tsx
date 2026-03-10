@@ -15,6 +15,7 @@ import DatasetFiles from './pages/DatasetFiles'
 import ApiKeys from './pages/ApiKeys'
 import AIAssistant from './pages/AIAssistant'
 import Settings from './pages/Settings'
+import WorkflowDesigner from './pages/WorkflowDesigner'
 import { initApi } from './api'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -96,6 +97,7 @@ function App() {
           <Route path="api-keys" element={<ApiKeys />} />
           <Route path="ai-assistant" element={<AIAssistant />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="workflow-designer" element={<WorkflowDesigner />} />
         </Route>
       </Routes>
     </BrowserRouter>
